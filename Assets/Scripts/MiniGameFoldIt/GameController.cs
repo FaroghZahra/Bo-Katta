@@ -12,6 +12,7 @@ public class GameController : MonoBehaviour
 
     public int maxRotations;
     public string nextSceneName;
+    public bool isEmbedded = false;  // Set to true by MinigameMenuController after additive load
 
     // Update is called once per frame
     void Update()
@@ -64,7 +65,10 @@ public class GameController : MonoBehaviour
 
         if (everythingCorrect)
         {
-            SceneManager.LoadScene(nextSceneName);
+            if (isEmbedded)
+                GameEvents.MinigameWon();
+            else
+                SceneManager.LoadScene(nextSceneName);
         }
         else
         {
