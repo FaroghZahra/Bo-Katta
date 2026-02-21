@@ -40,7 +40,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 1}
-  m_TargetSize: {x: 2338, y: 1080}
+  m_TargetSize: {x: 3088, y: 1440}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -56,11 +56,11 @@ MonoBehaviour:
     - UnityEditor.DeviceSimulation.ApplicationSettingsPlugin
     pluginStates:
     - '{}'
-    scale: 37
+    scale: 30
     fitToScreenEnabled: 1
     rotationDegree: 90
     highlightSafeAreaEnabled: 0
-    friendlyName: Apple iPhone 12 mini
+    friendlyName: Samsung Galaxy Note20 Ultra 5G
     screenIndex: 0
     networkReachability: 1
     systemLanguage: 10
