@@ -48,6 +48,9 @@ public class MinigameMenuController : MonoBehaviour
         {
             GameController gc = FindObjectOfType<GameController>();
             if (gc != null) gc.isEmbedded = true;
+
+            KintsugiGameController kgc = FindObjectOfType<KintsugiGameController>();
+            if (kgc != null) kgc.isEmbedded = true;
         };
     }
 

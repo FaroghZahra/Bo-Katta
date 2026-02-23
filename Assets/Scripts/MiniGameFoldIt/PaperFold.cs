@@ -23,6 +23,10 @@ public class PaperFold : MonoBehaviour
     public List<int> rotationOrderIndices;
     public bool rightOrder = false;
 
+    [Header("Swipe Input")]
+    [Tooltip("Screen-space direction the player swipes to fold this piece. E.g. (1,0) = right, (0,1) = up, (-1,0) = left, (0,-1) = down. Swiping the opposite direction unfolds.")]
+    public Vector2 swipeDirection;
+
     IEnumerator FoldAroundAxis(Transform paperTransform, Vector3 axis, float angle,Vector3 endPosition, float duration, bool back)
     {
         gameController.clickBlocked = true;

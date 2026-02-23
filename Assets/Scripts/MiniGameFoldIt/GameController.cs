@@ -14,31 +14,120 @@ public class GameController : MonoBehaviour
     public string nextSceneName;
     public bool isEmbedded = false;  // Set to true by MinigameMenuController after additive load
 
-    // Update is called once per frame
+    [Header("Swipe Settings")]
+    [Tooltip("Minimum pixels a finger must travel to count as a swipe")]
+    public float swipeThreshold = 50f;
+    [Tooltip("How closely the swipe must align with a piece's swipe direction (0=any, 1=exact). 0.5 = within 60 degrees.")]
+    public float swipeDirectionDotThreshold = 0.5f;
+
+    private Vector2 _touchStartPos;
+    private bool _isTouching;
+    private PaperFold[] _allFolds;
+
+    void Start()
+    {
+        _allFolds = FindObjectsOfType<PaperFold>();
+    }
+
     void Update()
     {
-        if(Input.GetMouseButtonDown(0) && clickBlocked == false)
+        if (clickBlocked) return;
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+        HandleMouseSwipe();
+#else
+        HandleTouchSwipe();
+#endif
+    }
+
+    // --- Input handlers ---
+
+    void HandleMouseSwipe()
+    {
+        if (Input.GetMouseButtonDown(0))
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, 100))
+            _touchStartPos = Input.mousePosition;
+            _isTouching = true;
+        }
+        else if (Input.GetMouseButtonUp(0) && _isTouching)
+        {
+            _isTouching = false;
+            ProcessSwipe((Vector2)Input.mousePosition - _touchStartPos);
+        }
+    }
+
+    void HandleTouchSwipe()
+    {
+        if (Input.touchCount != 1)
+        {
+            _isTouching = false;
+            return;
+        }
+
+        Touch touch = Input.GetTouch(0);
+
+        switch (touch.phase)
+        {
+            case TouchPhase.Began:
+                _touchStartPos = touch.position;
+                _isTouching = true;
+                break;
+
+            case TouchPhase.Ended:
+            case TouchPhase.Canceled:
+                if (_isTouching)
+                    ProcessSwipe(touch.position - _touchStartPos);
+                _isTouching = false;
+                break;
+        }
+    }
+
+    // --- Core logic ---
+
+    // Matches the swipe direction against every piece's declared swipeDirection.
+    // Swiping WITH a piece's direction folds it; swiping AGAINST it unfolds it.
+    // Folding takes priority over unfolding when both would match.
+    void ProcessSwipe(Vector2 swipeDelta)
+    {
+        if (swipeDelta.magnitude < swipeThreshold) return;
+
+        Vector2 swipeDir = swipeDelta.normalized;
+
+        PaperFold foldTarget   = null;
+        PaperFold unfoldTarget = null;
+        float bestFoldScore   = swipeDirectionDotThreshold;
+        float bestUnfoldScore = swipeDirectionDotThreshold;
+
+        foreach (PaperFold pf in _allFolds)
+        {
+            Vector2 pieceDir = pf.swipeDirection.normalized;
+            float dot = Vector2.Dot(swipeDir, pieceDir);
+
+            // Swipe aligns with piece's fold direction → candidate to fold
+            if (!pf.rotated && dot > bestFoldScore)
             {
-                if (hit.transform.GetComponent<ClickDetector>().paperFold.rotated == false)
-                {
-                    hit.transform.GetComponent<ClickDetector>().paperFold.RotatePaper(false);
-                }
-                else
-                {
-                    if (hit.transform.GetComponent<ClickDetector>().paperFold.orderIndex < currentOrderIndex - 1)
-                    {
-                        StartCoroutine(RotateBackToIndex(hit.transform.GetComponent<ClickDetector>().paperFold.orderIndex));
-                    }
-                    else
-                    {
-                        hit.transform.GetComponent<ClickDetector>().paperFold.RotatePaper(true);
-                    }
-                }
+                bestFoldScore = dot;
+                foldTarget = pf;
             }
+
+            // Swipe opposes piece's fold direction → candidate to unfold
+            if (pf.rotated && dot < -bestUnfoldScore)
+            {
+                bestUnfoldScore = -dot;
+                unfoldTarget = pf;
+            }
+        }
+
+        if (foldTarget != null)
+        {
+            foldTarget.RotatePaper(false);
+        }
+        else if (unfoldTarget != null)
+        {
+            if (unfoldTarget.orderIndex < currentOrderIndex - 1)
+                StartCoroutine(RotateBackToIndex(unfoldTarget.orderIndex));
+            else
+                unfoldTarget.RotatePaper(true);
         }
     }
 
