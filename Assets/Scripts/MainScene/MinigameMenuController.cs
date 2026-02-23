@@ -12,7 +12,7 @@ public class MinigameMenuController : MonoBehaviour
     public TextMeshProUGUI victoryText;        // "Congratulations!" text, starts inactive
 
     [Header("Scene")]
-    public string minigameSceneName = "FoldItScene";
+    public string minigameSceneName = "MiniGameScene";
 
     [Header("World Objects")]
     public GameObject collectibleObject;      // The Collectible instance in the scene
@@ -46,11 +46,19 @@ public class MinigameMenuController : MonoBehaviour
         minigameIsLoaded = true;
         loadOp.completed += _ =>
         {
-            GameController gc = FindObjectOfType<GameController>();
-            if (gc != null) gc.isEmbedded = true;
+            MiniGameSequenceController seq = FindObjectOfType<MiniGameSequenceController>();
+            if (seq != null)
+            {
+                seq.isEmbedded = true;
+            }
+            else
+            {
+                GameController gc = FindObjectOfType<GameController>();
+                if (gc != null) gc.isEmbedded = true;
 
-            KintsugiGameController kgc = FindObjectOfType<KintsugiGameController>();
-            if (kgc != null) kgc.isEmbedded = true;
+                KintsugiGameController kgc = FindObjectOfType<KintsugiGameController>();
+                if (kgc != null) kgc.isEmbedded = true;
+            }
         };
     }
 

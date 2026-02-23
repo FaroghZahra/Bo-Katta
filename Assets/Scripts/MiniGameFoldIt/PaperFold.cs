@@ -13,6 +13,13 @@ public class PaperFold : MonoBehaviour
     public float rotDuration;
     public float angleChange;
 
+    private Vector3 _restPosition;
+
+    void Awake()
+    {
+        _restPosition = transform.position;
+    }
+
     public bool rotated = false;
     public GameObject mainLine;
     public List<LineRenderer> lines;
@@ -27,22 +34,22 @@ public class PaperFold : MonoBehaviour
     [Tooltip("Screen-space direction the player swipes to fold this piece. E.g. (1,0) = right, (0,1) = up, (-1,0) = left, (0,-1) = down. Swiping the opposite direction unfolds.")]
     public Vector2 swipeDirection;
 
-    IEnumerator FoldAroundAxis(Transform paperTransform, Vector3 axis, float angle,Vector3 endPosition, float duration, bool back)
+    IEnumerator FoldAroundAxis(Transform paperTransform, Vector3 axis, float angle, Vector3 endPosition, float duration, bool back)
     {
         gameController.clickBlocked = true;
+
         Quaternion startRot = paperTransform.rotation;
         Vector3 startPos = paperTransform.position;
-
         float t = 0;
         while (t < duration)
         {
             t += Time.deltaTime;
             float rotAngle = gameController.rotationCurve.Evaluate(t / duration) * angle;
-            paperTransform.rotation = startRot * Quaternion.AngleAxis(rotAngle, axis);
+            paperTransform.rotation = Quaternion.AngleAxis(rotAngle, axis) * startRot;
             paperTransform.position = Vector3.Lerp(startPos, endPosition, t / duration);
             yield return null;
         }
-        paperTransform.rotation = startRot * Quaternion.AngleAxis(angle, axis);
+        paperTransform.rotation = Quaternion.AngleAxis(angle, axis) * startRot;
         paperTransform.position = endPosition;
 
         if (back)
@@ -76,8 +83,9 @@ public class PaperFold : MonoBehaviour
         {
             orderIndex = gameController.currentOrderIndex;
             gameController.paperFolds.Add(this);
+            Vector3 depthDir = Camera.main != null ? -Camera.main.transform.forward : Vector3.up;
             StartCoroutine(FoldAroundAxis(gameObject.transform, rotAxis, angleChange,
-                transform.position + new Vector3(0, orderIndex * 0.001f + 0.001f, 0), rotDuration, back));
+                transform.position + depthDir * (orderIndex * 0.001f + 0.001f), rotDuration, back));
             rotated = true;
 
             mainLine.SetActive(false);
@@ -99,7 +107,7 @@ public class PaperFold : MonoBehaviour
         {
             orderIndex = -1;
             StartCoroutine(FoldAroundAxis(gameObject.transform, rotAxis, -angleChange,
-                 new Vector3(gameObject.transform.position.x, 0.003f, gameObject.transform.position.z), rotDuration, back));
+                 _restPosition, rotDuration, back));
             gameController.paperFolds.Remove(this);
             rotated = false;
             rightOrder = false;

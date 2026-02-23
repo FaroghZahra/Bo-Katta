@@ -343,6 +343,7 @@ MonoBehaviour:
   rotAxis: {x: 0, y: 0, z: 1}
   rotDuration: 0.5
   angleChange: -180
+  foldPivot: {fileID: 0}
   rotated: 0
   mainLine: {fileID: 1742723650}
   lines:
@@ -1120,9 +1121,10 @@ MonoBehaviour:
   - {fileID: 1371461687}
   - {fileID: 703021776}
   gameController: {fileID: 1010556320}
-  rotAxis: {x: 0, y: 0, z: 1}
+  rotAxis: {x: 0, y: 1, z: 0}
   rotDuration: 0.5
   angleChange: 180
+  foldPivot: {fileID: 0}
   rotated: 0
   mainLine: {fileID: 258224183}
   lines:
@@ -1605,6 +1607,7 @@ MonoBehaviour:
   rotAxis: {x: 1, y: 0, z: 0}
   rotDuration: 0.5
   angleChange: 180
+  foldPivot: {fileID: 0}
   rotated: 0
   mainLine: {fileID: 14914029}
   lines:
@@ -2422,6 +2425,7 @@ MonoBehaviour:
   rotAxis: {x: 1, y: 0, z: 0}
   rotDuration: 0.5
   angleChange: -180
+  foldPivot: {fileID: 0}
   rotated: 0
   mainLine: {fileID: 911508126}
   lines:

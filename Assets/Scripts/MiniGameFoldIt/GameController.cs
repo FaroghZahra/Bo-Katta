@@ -13,6 +13,7 @@ public class GameController : MonoBehaviour
     public int maxRotations;
     public string nextSceneName;
     public bool isEmbedded = false;  // Set to true by MinigameMenuController after additive load
+    [HideInInspector] public System.Action onComplete;
 
     [Header("Swipe Settings")]
     [Tooltip("Minimum pixels a finger must travel to count as a swipe")]
@@ -49,10 +50,18 @@ public class GameController : MonoBehaviour
             _touchStartPos = Input.mousePosition;
             _isTouching = true;
         }
-        else if (Input.GetMouseButtonUp(0) && _isTouching)
+        else if (_isTouching && Input.GetMouseButton(0))
+        {
+            Vector2 delta = (Vector2)Input.mousePosition - _touchStartPos;
+            if (delta.magnitude >= swipeThreshold)
+            {
+                _isTouching = false;
+                ProcessSwipe(delta);
+            }
+        }
+        else if (Input.GetMouseButtonUp(0))
         {
             _isTouching = false;
-            ProcessSwipe((Vector2)Input.mousePosition - _touchStartPos);
         }
     }
 
@@ -73,10 +82,20 @@ public class GameController : MonoBehaviour
                 _isTouching = true;
                 break;
 
+            case TouchPhase.Moved:
+                if (_isTouching)
+                {
+                    Vector2 delta = touch.position - _touchStartPos;
+                    if (delta.magnitude >= swipeThreshold)
+                    {
+                        _isTouching = false;
+                        ProcessSwipe(delta);
+                    }
+                }
+                break;
+
             case TouchPhase.Ended:
             case TouchPhase.Canceled:
-                if (_isTouching)
-                    ProcessSwipe(touch.position - _touchStartPos);
                 _isTouching = false;
                 break;
         }
@@ -154,7 +173,9 @@ public class GameController : MonoBehaviour
 
         if (everythingCorrect)
         {
-            if (isEmbedded)
+            if (onComplete != null)
+                onComplete.Invoke();
+            else if (isEmbedded)
                 GameEvents.MinigameWon();
             else
                 SceneManager.LoadScene(nextSceneName);

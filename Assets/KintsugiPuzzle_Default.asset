@@ -34,8 +34,8 @@ MonoBehaviour:
     y: 0
     width: 0.5
     height: 0.5
-  puzzleWorldWidth: 5
-  puzzleWorldHeight: 4
+  puzzleWorldWidth: 2
+  puzzleWorldHeight: 2
   tearSubdivisions: 12
   tearAmplitude: 0.15
   randomSeed: 42
@@ -65,6 +65,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  scatterRadius: 6.5
+  scatterRadius: 3
   goldSeamMaterial: {fileID: 2100000, guid: 18f1c689e6bd1e24f8f201b8a0af1109, type: 2}
   goldSeamWidth: 0.04

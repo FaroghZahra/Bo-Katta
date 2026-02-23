@@ -12,6 +12,7 @@ public class KintsugiGameController : MonoBehaviour
     public bool   isEmbedded    = false;
     public string nextSceneName = "MainScene";
 
+    [HideInInspector] public System.Action onComplete;
     [HideInInspector] public bool clickBlocked = false;
 
     private List<KintsugiPiece> _pieces    = new List<KintsugiPiece>();
@@ -167,7 +168,9 @@ public class KintsugiGameController : MonoBehaviour
 
     void CheckCompletion()
     {
-        if (isEmbedded)
+        if (onComplete != null)
+            onComplete.Invoke();
+        else if (isEmbedded)
             GameEvents.MinigameWon();
         else
             SceneManager.LoadScene(nextSceneName);

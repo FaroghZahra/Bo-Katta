@@ -9,6 +9,6 @@ EditorBuildSettings:
     path: Assets/Scenes/MainScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Scenes/FoldItScene.unity
-    guid: 9fc0d4010bbf28b4594072e72b8655ab
+    path: Assets/Scenes/MiniGameScene.unity
+    guid: 257067918ab8c7c4b92211474fb96136
   m_configObjects: {}
