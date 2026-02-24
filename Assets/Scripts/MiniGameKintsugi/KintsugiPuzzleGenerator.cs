@@ -361,6 +361,9 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void CreateGoldSeams()
     {
+        List<SeamTraceState> allSeams = new List<SeamTraceState>();
+        Transform seamParent = goldSeamsParent ?? puzzleCenter;
+
         int n = _pieceRects.Count;
         for (int a = 0; a < n; a++)
         {
@@ -369,29 +372,63 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
                 string key = $"{a}_{b}";
                 if (!_tearEdges.TryGetValue(key, out List<Vector2> profile)) continue;
 
+                // --- Gold LineRenderer (progress indicator, starts hidden) ---
                 GameObject seamGo = new GameObject($"Seam_{a}_{b}");
-                seamGo.transform.SetParent(goldSeamsParent ?? puzzleCenter, false);
+                seamGo.transform.SetParent(seamParent, false);
 
                 LineRenderer lr = seamGo.AddComponent<LineRenderer>();
-                lr.useWorldSpace   = true;
-                lr.positionCount   = profile.Count;
-                lr.startWidth      = _data.goldSeamWidth;
-                lr.endWidth        = _data.goldSeamWidth;
-                lr.material        = goldSeamMaterial;
-                lr.sortingOrder    = 10;
-                lr.enabled         = false;
+                lr.useWorldSpace = true;
+                lr.positionCount = profile.Count;
+                lr.startWidth    = _data.goldSeamWidth;
+                lr.endWidth      = _data.goldSeamWidth;
+                lr.material      = goldSeamMaterial;
+                lr.sortingOrder  = 10;
+                lr.enabled       = false;
 
+                // Bake world positions and collect them for the state
+                Vector3[] pts = new Vector3[profile.Count];
                 for (int k = 0; k < profile.Count; k++)
                 {
                     Vector3 wp = NormalizedToWorld(profile[k].x, profile[k].y);
                     wp.z = -1f;
                     lr.SetPosition(k, wp);
+                    pts[k] = wp;
                 }
 
-                if (a < _pieces.Count) _pieces[a].adjacentSeams[b] = lr;
-                if (b < _pieces.Count) _pieces[b].adjacentSeams[a] = lr;
+                // --- Guide LineRenderer (faint hint, starts hidden) ---
+                GameObject guideGo = new GameObject($"SeamGuide_{a}_{b}");
+                guideGo.transform.SetParent(seamParent, false);
+
+                LineRenderer guideLr = guideGo.AddComponent<LineRenderer>();
+                guideLr.useWorldSpace = true;
+                guideLr.positionCount = profile.Count;
+                guideLr.startWidth    = _data.goldSeamWidth;
+                guideLr.endWidth      = _data.goldSeamWidth;
+                guideLr.material      = new Material(Shader.Find("Sprites/Default"));
+                guideLr.startColor    = new Color(1f, 0.9f, 0.6f, 0.3f);
+                guideLr.endColor      = new Color(1f, 0.9f, 0.6f, 0.3f);
+                guideLr.sortingOrder  = 9;
+                guideLr.enabled       = false;
+
+                for (int k = 0; k < pts.Length; k++)
+                    guideLr.SetPosition(k, pts[k]);
+
+                // --- Build state ---
+                SeamTraceState state = new SeamTraceState
+                {
+                    goldLR  = lr,
+                    guideLR = guideLr,
+                    points  = pts
+                };
+
+                if (a < _pieces.Count) _pieces[a].adjacentSeams[b] = state;
+                if (b < _pieces.Count) _pieces[b].adjacentSeams[a] = state;
+
+                allSeams.Add(state);
             }
         }
+
+        gameController.SetSeams(allSeams);
     }
 
     // =========================================================================

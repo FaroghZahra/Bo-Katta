@@ -16,8 +16,8 @@ public class KintsugiPiece : MonoBehaviour
     public bool isDragging  = false;
     public Vector3 dragOffset;
 
-    // neighborPieceIndex → LineRenderer on the shared seam
-    public Dictionary<int, LineRenderer> adjacentSeams = new Dictionary<int, LineRenderer>();
+    // neighborPieceIndex → SeamTraceState for the shared seam
+    public Dictionary<int, SeamTraceState> adjacentSeams = new Dictionary<int, SeamTraceState>();
 
     private KintsugiGameController _gc;
     private float          _snapThreshold;
@@ -86,32 +86,34 @@ public class KintsugiPiece : MonoBehaviour
         transform.position = targetWorldPosition;
         isSnapped = true;
 
-        RevealAdjacentSeams();
+        ActivateAdjacentSeams();
 
         _gc.OnPieceSnapped(this);
         _gc.clickBlocked = false;
     }
 
-    // Show gold seams shared with already-snapped neighbours.
-    private void RevealAdjacentSeams()
+    // Activate guide lines on seams shared with already-snapped neighbours.
+    private void ActivateAdjacentSeams()
     {
         foreach (var kvp in adjacentSeams)
         {
-            int neighborIdx = kvp.Key;
-            LineRenderer lr  = kvp.Value;
-            if (lr == null) continue;
-
-            KintsugiPiece neighbor = _gc.GetPiece(neighborIdx);
+            KintsugiPiece neighbor = _gc.GetPiece(kvp.Key);
             if (neighbor != null && neighbor.isSnapped)
-                lr.enabled = true;
+            {
+                kvp.Value.isActive = true;
+                kvp.Value.guideLR.enabled = true;
+            }
         }
     }
 
-    // Called by a neighbour's RevealAdjacentSeams when it snaps after we do.
-    public void TryRevealSeamWith(int neighborIdx)
+    // Called by a neighbour when it snaps after we do.
+    public void TryActivateSeamWith(int neighborIdx)
     {
         if (!isSnapped) return;
-        if (adjacentSeams.TryGetValue(neighborIdx, out LineRenderer lr) && lr != null)
-            lr.enabled = true;
+        if (adjacentSeams.TryGetValue(neighborIdx, out SeamTraceState state) && state != null)
+        {
+            state.isActive = true;
+            state.guideLR.enabled = true;
+        }
     }
 }

@@ -3,6 +3,20 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
+/// Tracks the tracing state of a single gold seam between two snapped pieces.
+/// </summary>
+public class SeamTraceState
+{
+    public LineRenderer goldLR;    // Progress indicator — grows from 0 to N points
+    public LineRenderer guideLR;   // Full-path faint hint — visible when seam is active
+    public Vector3[]    points;    // World-space seam points (N = tearSubdivisions+1)
+    public int          progress;  // Points confirmed traced (0 = untouched, N = done)
+    public bool         isActive;  // True once both adjacent pieces are snapped
+
+    public bool IsFullyTraced => progress >= points.Length;
+}
+
+/// <summary>
 /// Central input controller for the Kintsugi puzzle.
 /// Mirrors GameController.cs (FoldIt): isEmbedded flag, clickBlocked, GameEvents.MinigameWon().
 /// </summary>
@@ -15,12 +29,18 @@ public class KintsugiGameController : MonoBehaviour
     [HideInInspector] public System.Action onComplete;
     [HideInInspector] public bool clickBlocked = false;
 
-    private List<KintsugiPiece> _pieces    = new List<KintsugiPiece>();
+    [Header("Tracing")]
+    public float traceProximity = 0.25f;   // World-unit reach for cursor→seam-point detection
+
+    private List<KintsugiPiece>    _pieces    = new List<KintsugiPiece>();
     private int _snappedCount = 0;
     private int _totalPieces  = 0;
 
     private KintsugiPiece _draggedPiece;
     private Camera        _cam;
+
+    private List<SeamTraceState> _allSeams   = new List<SeamTraceState>();
+    private SeamTraceState       _activeSeam;
 
     // Layer mask for Physics2D overlap — layer 8 "KintsugiPieces"
     private static readonly int PieceLayer     = 8;
@@ -41,7 +61,13 @@ public class KintsugiGameController : MonoBehaviour
         _snappedCount = 0;
     }
 
-    /// <summary>Retrieve a piece by index (used by KintsugiPiece for seam reveal).</summary>
+    /// <summary>Called by KintsugiPuzzleGenerator once all seams are created.</summary>
+    public void SetSeams(List<SeamTraceState> seams)
+    {
+        _allSeams = seams;
+    }
+
+    /// <summary>Retrieve a piece by index (used by KintsugiPiece for seam activation).</summary>
     public KintsugiPiece GetPiece(int index)
     {
         if (index < 0 || index >= _pieces.Count) return null;
@@ -72,16 +98,22 @@ public class KintsugiGameController : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 world = ScreenToWorld(Input.mousePosition);
-            TryPickUp(world);
+            if (!TryPickUp(world))
+                TryStartTrace(world);
         }
-        else if (Input.GetMouseButton(0) && _draggedPiece != null)
+        else if (Input.GetMouseButton(0))
         {
             Vector3 world = ScreenToWorld(Input.mousePosition);
-            _draggedPiece.UpdateDragPosition(world);
+            if (_draggedPiece != null)
+                _draggedPiece.UpdateDragPosition(world);
+            else if (_activeSeam != null)
+                UpdateTrace(world);
         }
-        else if (Input.GetMouseButtonUp(0) && _draggedPiece != null)
+        else if (Input.GetMouseButtonUp(0))
         {
-            TryRelease();
+            if (_draggedPiece != null)
+                TryRelease();
+            EndTrace();
         }
     }
 
@@ -99,17 +131,22 @@ public class KintsugiGameController : MonoBehaviour
         switch (touch.phase)
         {
             case TouchPhase.Began:
-                TryPickUp(world);
+                if (!TryPickUp(world))
+                    TryStartTrace(world);
                 break;
 
             case TouchPhase.Moved:
             case TouchPhase.Stationary:
-                _draggedPiece?.UpdateDragPosition(world);
+                if (_draggedPiece != null)
+                    _draggedPiece.UpdateDragPosition(world);
+                else if (_activeSeam != null)
+                    UpdateTrace(world);
                 break;
 
             case TouchPhase.Ended:
             case TouchPhase.Canceled:
                 if (_draggedPiece != null) TryRelease();
+                EndTrace();
                 break;
         }
     }
@@ -118,13 +155,13 @@ public class KintsugiGameController : MonoBehaviour
     // Pick-up / release
     // -------------------------------------------------------------------------
 
-    void TryPickUp(Vector3 worldPos)
+    bool TryPickUp(Vector3 worldPos)
     {
         Collider2D hit = Physics2D.OverlapPoint(worldPos, PieceLayerMask);
-        if (hit == null) return;
+        if (hit == null) return false;
 
         KintsugiPiece piece = hit.GetComponent<KintsugiPiece>();
-        if (piece == null || piece.isSnapped) return;
+        if (piece == null || piece.isSnapped) return false;
 
         _draggedPiece = piece;
         _draggedPiece.isDragging = true;
@@ -133,6 +170,7 @@ public class KintsugiGameController : MonoBehaviour
         Vector3 offset = piece.transform.position - worldPos;
         offset.z = 0f;
         _draggedPiece.dragOffset = offset;
+        return true;
     }
 
     void TryRelease()
@@ -148,6 +186,113 @@ public class KintsugiGameController : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
+    // Seam tracing
+    // -------------------------------------------------------------------------
+
+    void TryStartTrace(Vector3 world)
+    {
+        SeamTraceState best        = null;
+        float          bestDist    = traceProximity * 2f;  // wider pickup radius
+        int            bestNearIdx = 0;
+
+        foreach (var seam in _allSeams)
+        {
+            if (!seam.isActive || seam.IsFullyTraced) continue;
+
+            // For partial traces search from the current tip so the player
+            // clicks near where they left off; for fresh seams search all points.
+            int startIdx = seam.progress > 0 ? Mathf.Max(0, seam.progress - 1) : 0;
+
+            for (int i = startIdx; i < seam.points.Length; i++)
+            {
+                float d = Vector2.Distance(world, seam.points[i]);  // ignore Z (-1 vs 0 gap)
+                if (d < bestDist)
+                {
+                    bestDist    = d;
+                    best        = seam;
+                    bestNearIdx = i;
+                }
+            }
+        }
+
+        if (best == null) return;
+
+        if (best.progress == 0)
+        {
+            // Fresh seam: allow either direction, reverse if click is on the far half
+            bool reverse = bestNearIdx > best.points.Length / 2;
+            if (reverse)
+            {
+                System.Array.Reverse(best.points);
+            }
+            best.goldLR.enabled       = true;
+            best.goldLR.positionCount = 1;
+            best.goldLR.SetPosition(0, best.points[0]);
+            best.progress = 1;
+        }
+        else
+        {
+            // Resumed partial seam — re-bake visible portion so the LR shows the
+            // correct tear shape (positionCount may have been truncated on last release)
+            best.goldLR.positionCount = best.progress;
+            for (int i = 0; i < best.progress; i++)
+                best.goldLR.SetPosition(i, best.points[i]);
+        }
+
+        _activeSeam = best;
+    }
+
+    void UpdateTrace(Vector3 world)
+    {
+        if (_activeSeam == null) return;
+
+        // Advance using segment projection so the user only needs to drag
+        // generally along the seam — no need to land exactly on each point.
+        int n = _activeSeam.points.Length;
+        while (_activeSeam.progress < n)
+        {
+            Vector3 prevPt = _activeSeam.points[_activeSeam.progress - 1];
+            Vector3 nextPt = _activeSeam.points[_activeSeam.progress];
+            Vector3 seg    = nextPt - prevPt;
+            float   segLen = seg.magnitude;
+
+            bool advance;
+            if (segLen < 0.001f)
+            {
+                advance = true;
+            }
+            else
+            {
+                // Advance once the cursor's projection along this segment
+                // reaches its midpoint (generous threshold, natural drag feel)
+                float proj = Vector3.Dot(world - prevPt, seg / segLen);
+                advance = proj >= segLen * 0.5f;
+            }
+
+            if (advance) _activeSeam.progress++;
+            else break;
+        }
+
+        // Always re-write positions from points[] — growing positionCount would
+        // otherwise zero-init new slots instead of using the tear path.
+        _activeSeam.goldLR.positionCount = _activeSeam.progress;
+        for (int i = 0; i < _activeSeam.progress; i++)
+            _activeSeam.goldLR.SetPosition(i, _activeSeam.points[i]);
+
+        if (_activeSeam.IsFullyTraced)
+        {
+            _activeSeam.guideLR.enabled = false;  // hide guide, gold seam now complete
+            _activeSeam = null;
+            TryCheckCompletion();
+        }
+    }
+
+    void EndTrace()
+    {
+        _activeSeam = null;
+    }
+
+    // -------------------------------------------------------------------------
     // Completion
     // -------------------------------------------------------------------------
 
@@ -155,15 +300,22 @@ public class KintsugiGameController : MonoBehaviour
     {
         _snappedCount++;
 
-        // Notify neighbours to reveal seams that are now ready
+        // Notify neighbours to activate seams that are now ready
         foreach (var kvp in piece.adjacentSeams)
         {
             KintsugiPiece neighbor = GetPiece(kvp.Key);
-            neighbor?.TryRevealSeamWith(piece.pieceIndex);
+            neighbor?.TryActivateSeamWith(piece.pieceIndex);
         }
 
-        if (_snappedCount >= _totalPieces)
-            CheckCompletion();
+        TryCheckCompletion();
+    }
+
+    void TryCheckCompletion()
+    {
+        if (_snappedCount < _totalPieces) return;
+        foreach (var seam in _allSeams)
+            if (!seam.IsFullyTraced) return;
+        CheckCompletion();
     }
 
     void CheckCompletion()

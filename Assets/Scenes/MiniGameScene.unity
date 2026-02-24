@@ -354,6 +354,7 @@ MonoBehaviour:
   isEmbedded: 0
   nextSceneName: MainScene
   clickBlocked: 0
+  traceProximity: 0.25
 --- !u!1001 &89583467
 PrefabInstance:
   m_ObjectHideFlags: 0
