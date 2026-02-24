@@ -50,7 +50,13 @@ public class KintsugiGameController : MonoBehaviour
 
     void Awake()
     {
-        _cam = Camera.main;
+        // Prefer a camera in the same scene (safe under additive loading).
+        // Camera.main can be ambiguous or null when two scenes are loaded together.
+        foreach (Camera c in FindObjectsOfType<Camera>())
+        {
+            if (c.gameObject.scene == gameObject.scene) { _cam = c; break; }
+        }
+        if (_cam == null) _cam = Camera.main;
     }
 
     /// <summary>Called by KintsugiPuzzleGenerator once all pieces are created.</summary>
@@ -334,7 +340,15 @@ public class KintsugiGameController : MonoBehaviour
 
     Vector3 ScreenToWorld(Vector3 screenPos)
     {
-        if (_cam == null) _cam = Camera.main;
+        if (_cam == null)
+        {
+            foreach (Camera c in FindObjectsOfType<Camera>())
+            {
+                if (c.gameObject.scene == gameObject.scene) { _cam = c; break; }
+            }
+            if (_cam == null) _cam = Camera.main;
+            if (_cam == null) return Vector3.zero;
+        }
         Vector3 world = _cam.ScreenToWorldPoint(screenPos);
         world.z = 0f;
         return world;

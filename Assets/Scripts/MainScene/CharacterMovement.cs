@@ -49,17 +49,6 @@ public class CharacterMovement : MonoBehaviour
             rb.velocity = moveDirection * moveSpeed;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Collectible"))
-        {
-            StopMoving();
-            CollectibleLevel cl = other.GetComponent<CollectibleLevel>();
-            int level = cl != null ? cl.levelIndex : 1;
-            MinigameMenuController.Instance?.OpenMenu(level);
-        }
-    }
-
     /// <summary>Wire this to the Forward button's OnClick in the Inspector.</summary>
     public void StartMoving()
     {

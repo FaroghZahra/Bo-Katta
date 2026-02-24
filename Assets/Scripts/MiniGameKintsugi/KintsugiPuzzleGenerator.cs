@@ -35,7 +35,8 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
     private Dictionary<string, List<Vector2>> _tearEdges = new Dictionary<string, List<Vector2>>();
     private List<KintsugiPiece> _pieces = new List<KintsugiPiece>();
 
-    private const int KintsugiLayer = 8; // Physics Layer "KintsugiPieces"
+    private const int KintsugiLayer  = 8; // Physics Layer "KintsugiPieces" — used for Physics2D overlap queries
+    private const int MiniGameLayer  = 9; // Rendering layer "MiniGame" — seen only by the minigame camera
 
     // =========================================================================
     // Entry Point
@@ -374,6 +375,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
                 // --- Gold LineRenderer (progress indicator, starts hidden) ---
                 GameObject seamGo = new GameObject($"Seam_{a}_{b}");
+                seamGo.layer = MiniGameLayer;
                 seamGo.transform.SetParent(seamParent, false);
 
                 LineRenderer lr = seamGo.AddComponent<LineRenderer>();
@@ -397,6 +399,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
                 // --- Guide LineRenderer (faint hint, starts hidden) ---
                 GameObject guideGo = new GameObject($"SeamGuide_{a}_{b}");
+                guideGo.layer = MiniGameLayer;
                 guideGo.transform.SetParent(seamParent, false);
 
                 LineRenderer guideLr = guideGo.AddComponent<LineRenderer>();
@@ -471,6 +474,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         if (_texture == null) return;
 
         GameObject bg = new GameObject("PuzzleBackground");
+        bg.layer = MiniGameLayer;
         bg.transform.SetParent(puzzleCenter, worldPositionStays: false);
         bg.transform.localPosition = new Vector3(0f, 0f, 0.5f);
 
