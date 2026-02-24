@@ -31,9 +31,10 @@ public class MinigameMenuController : MonoBehaviour
     private void OnEnable()  => GameEvents.OnMinigameWon += HandleMinigameWon;
     private void OnDisable() => GameEvents.OnMinigameWon -= HandleMinigameWon;
 
-    public void OpenMenu()
+    public void OpenMenu(int level = 1)
     {
         if (minigameIsLoaded) return;
+        GameEvents.CurrentLevel = level;
         overlayPanel?.SetActive(true);
 
         AsyncOperation loadOp = SceneManager.LoadSceneAsync(minigameSceneName, LoadSceneMode.Additive);

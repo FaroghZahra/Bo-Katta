@@ -2,36 +2,70 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Runs at Start(). Procedurally generates irregular tear edges, per-piece meshes,
+/// Procedurally generates irregular tear edges, per-piece meshes,
 /// PolygonCollider2Ds, UV mapping, and gold seam LineRenderers.
+/// Call Initialize(levelIndex) explicitly (done by MiniGameSequenceController at +100).
 /// </summary>
 public class KintsugiPuzzleGenerator : MonoBehaviour
 {
-    [Header("Config & References")]
-    public KintsugiPuzzleConfig    config;
+    [Header("References")]
     public KintsugiGameController  gameController;
     public Material                pieceMaterial;   // Sprites/Default with puzzle texture
     public Transform               puzzleCenter;    // Empty GO at world origin
     public Transform               goldSeamsParent; // Empty child GO named "GoldSeams"
 
+    [Header("Level Textures")]
+    [Tooltip("Index 0 = Level 1, index 1 = Level 2, index 2 = Level 3.")]
+    public Texture2D[]     levelTextures;
+
+    [Header("Seam & Snap")]
+    public Material        goldSeamMaterial;
+    public AnimationCurve  snapCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     [Header("Background")]
     [Range(0f, 1f)]
-    public float backgroundAlpha = 0.1f;          // Opacity of the ghost image
+    public float backgroundAlpha = 0.1f;
+
+    // Runtime data loaded from JSON
+    private KintsugiLevelData    _data;
+    private Texture2D            _texture;
+    private List<Rect>           _pieceRects;
 
     // "minIdx_maxIdx" → normalized tear points (A's view)
-    // "maxIdx_minIdx" → reversed (B's view)
     private Dictionary<string, List<Vector2>> _tearEdges = new Dictionary<string, List<Vector2>>();
     private List<KintsugiPiece> _pieces = new List<KintsugiPiece>();
 
     private const int KintsugiLayer = 8; // Physics Layer "KintsugiPieces"
 
-    void Start()
+    // =========================================================================
+    // Entry Point
+    // =========================================================================
+
+    public void Initialize(int levelIndex)
     {
-        if (config == null || config.pieceRects == null || config.pieceRects.Count == 0)
+        TextAsset json = Resources.Load<TextAsset>($"Kintsugi/Level{levelIndex}");
+        if (json == null)
         {
-            Debug.LogError("[KintsugiPuzzleGenerator] No config or pieceRects assigned.");
+            Debug.LogError($"[KintsugiPuzzleGenerator] Could not load Resources/Kintsugi/Level{levelIndex}.json. " +
+                           "Make sure the file exists in Assets/Resources/Kintsugi/.");
             return;
         }
+
+        _data = JsonUtility.FromJson<KintsugiLevelData>(json.text);
+        if (_data == null || _data.pieceRects == null || _data.pieceRects.Count == 0)
+        {
+            Debug.LogError($"[KintsugiPuzzleGenerator] Level{levelIndex}.json parsed but has no pieceRects.");
+            return;
+        }
+
+        // Convert KintsugiRectData → UnityEngine.Rect
+        _pieceRects = _data.pieceRects.ConvertAll(d => new Rect(d.x, d.y, d.w, d.h));
+
+        // Pick texture by level index (0-based array)
+        int texIdx = levelIndex - 1;
+        _texture = (levelTextures != null && texIdx >= 0 && texIdx < levelTextures.Length)
+                   ? levelTextures[texIdx]
+                   : null;
 
         GenerateTearEdges();
         CreateBackground();
@@ -48,20 +82,19 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void GenerateTearEdges()
     {
-        int n = config.pieceRects.Count;
+        int n = _pieceRects.Count;
         for (int a = 0; a < n; a++)
         {
             for (int b = a + 1; b < n; b++)
             {
-                Rect rA = config.pieceRects[a];
-                Rect rB = config.pieceRects[b];
+                Rect rA = _pieceRects[a];
+                Rect rB = _pieceRects[b];
 
                 if (TryGetSharedEdge(rA, rB, out Vector2 start, out Vector2 end, out bool isHorizontal))
                 {
                     int edgeHash = a * 1000 + b;
                     List<Vector2> profile = GenerateTearProfile(start, end, isHorizontal, edgeHash);
 
-                    // Store forward (A→B) and reversed (B→A)
                     _tearEdges[$"{a}_{b}"] = profile;
                     List<Vector2> reversed = new List<Vector2>(profile);
                     reversed.Reverse();
@@ -115,22 +148,20 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
     List<Vector2> GenerateTearProfile(Vector2 start, Vector2 end,
                                        bool isHorizontal, int edgeHash)
     {
-        var rng = new System.Random(config.randomSeed + edgeHash);
-        int subdivs = config.tearSubdivisions;
+        var rng = new System.Random(_data.randomSeed + edgeHash);
+        int subdivs = _data.tearSubdivisions;
 
         List<Vector2> points = new List<Vector2> { start };
 
         Vector2 dir  = (end - start).normalized;
-        // Perpendicular: for horizontal edges displace in Y, for vertical in X
         Vector2 perp = isHorizontal ? new Vector2(0f, 1f) : new Vector2(1f, 0f);
 
         for (int i = 1; i < subdivs; i++)
         {
             float t = (float)i / subdivs;
             Vector2 basePoint = Vector2.Lerp(start, end, t);
-            float offset = ((float)rng.NextDouble() * 2f - 1f) * config.tearAmplitude;
+            float offset = ((float)rng.NextDouble() * 2f - 1f) * _data.tearAmplitude;
             Vector2 displaced = basePoint + perp * offset;
-            // Clamp to [0,1] normalized space
             displaced.x = Mathf.Clamp01(displaced.x);
             displaced.y = Mathf.Clamp01(displaced.y);
             points.Add(displaced);
@@ -146,42 +177,35 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void CreatePieces()
     {
-        int n = config.pieceRects.Count;
+        int n = _pieceRects.Count;
         for (int i = 0; i < n; i++)
         {
-            Rect rect = config.pieceRects[i];
+            Rect rect = _pieceRects[i];
 
-            // Piece world-space center
             float cx = rect.x + rect.width  * 0.5f;
             float cy = rect.y + rect.height * 0.5f;
             Vector3 pieceWorldCenter = NormalizedToWorld(cx, cy);
 
-            // Build outline in normalized space, then convert to world
             List<Vector2> outline = BuildPieceOutline(i);
-
             Mesh mesh = BuildMesh(outline, pieceWorldCenter);
 
-            // Create GO
             GameObject go = new GameObject($"KintsugiPiece_{i}");
             go.layer = KintsugiLayer;
             go.transform.SetParent(puzzleCenter, worldPositionStays: false);
             go.transform.position = pieceWorldCenter;
 
-            // MeshFilter + MeshRenderer
             MeshFilter   mf = go.AddComponent<MeshFilter>();
             MeshRenderer mr = go.AddComponent<MeshRenderer>();
             mf.mesh = mesh;
 
-            // Assign material with puzzle texture
             if (pieceMaterial != null)
             {
                 Material mat = new Material(pieceMaterial);
-                if (config.puzzleTexture != null)
-                    mat.mainTexture = config.puzzleTexture;
+                if (_texture != null)
+                    mat.mainTexture = _texture;
                 mr.material = mat;
             }
 
-            // PolygonCollider2D in local space
             PolygonCollider2D poly = go.AddComponent<PolygonCollider2D>();
             Vector2[] localPath = new Vector2[outline.Count];
             for (int k = 0; k < outline.Count; k++)
@@ -191,105 +215,119 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
             }
             poly.SetPath(0, localPath);
 
-            // KintsugiPiece component
             KintsugiPiece piece = go.AddComponent<KintsugiPiece>();
-            piece.Initialize(gameController, config, pieceWorldCenter, i, pieceWorldCenter);
+            piece.Initialize(gameController,
+                             _data.snapThreshold, _data.snapDuration, snapCurve,
+                             pieceWorldCenter, i, pieceWorldCenter);
 
             _pieces.Add(piece);
         }
     }
 
-    /// <summary>
-    /// Builds the CCW normalized-space outline for piece i.
-    /// Walks Bottom→Right→Top→Left sides; uses tear profiles on shared edges.
-    /// </summary>
     List<Vector2> BuildPieceOutline(int i)
     {
-        Rect r = config.pieceRects[i];
-        int n = config.pieceRects.Count;
+        Rect r = _pieceRects[i];
 
-        // Corners in normalized space
         Vector2 BL = new Vector2(r.xMin, r.yMin);
         Vector2 BR = new Vector2(r.xMax, r.yMin);
         Vector2 TR = new Vector2(r.xMax, r.yMax);
         Vector2 TL = new Vector2(r.xMin, r.yMax);
 
-        // Four sides: (start, end) in the CCW walk direction
-        // CCW for standard math = Bottom (BL→BR), Right (BR→TR), Top (TR→TL), Left (TL→BL)
         var sides = new (Vector2 from, Vector2 to, bool isHorizontal)[]
         {
-            (BL, BR, true),   // bottom
-            (BR, TR, false),  // right
-            (TR, TL, true),   // top
-            (TL, BL, false),  // left
+            (BL, BR, true),
+            (BR, TR, false),
+            (TR, TL, true),
+            (TL, BL, false),
         };
 
         List<Vector2> outline = new List<Vector2>();
 
         foreach (var side in sides)
         {
-            // Find neighbour sharing this edge
-            int neighbor = FindNeighborOnEdge(i, side.from, side.to, side.isHorizontal);
+            var segments = FindAllNeighborsOnEdge(i, side.from, side.to, side.isHorizontal);
 
-            List<Vector2> edgePoints;
-            if (neighbor >= 0 && _tearEdges.TryGetValue($"{i}_{neighbor}", out List<Vector2> tear))
+            if (segments.Count == 0)
             {
-                // Ensure the tear runs from 'side.from' to 'side.to'
-                edgePoints = OrientTearToSide(tear, side.from, side.to);
+                // Outer edge — side.from is already the last outline point
+                outline.Add(side.to);
             }
             else
             {
-                edgePoints = new List<Vector2> { side.from, side.to };
+                // Concatenate all sub-segment tear profiles in order.
+                // Skip index 0 of each segment: it's the junction already added by the previous entry.
+                foreach (var (_, orientedTear) in segments)
+                {
+                    for (int k = 1; k < orientedTear.Count; k++)
+                        outline.Add(orientedTear[k]);
+                }
             }
-
-            // Skip first point of every segment to avoid duplicates
-            for (int k = 1; k < edgePoints.Count; k++)
-                outline.Add(edgePoints[k]);
         }
 
         return outline;
     }
 
-    int FindNeighborOnEdge(int i, Vector2 edgeFrom, Vector2 edgeTo, bool isHorizontal)
+    // Returns all tear sub-segments along the given side, each oriented from→to, sorted in that direction.
+    // Handles the case where a single side is shared with multiple neighbours (T-junction layouts).
+    List<(int, List<Vector2>)> FindAllNeighborsOnEdge(int i,
+                                                       Vector2 edgeFrom, Vector2 edgeTo,
+                                                       bool isHorizontal)
     {
-        int n = config.pieceRects.Count;
+        float eps = 0.001f;
+        var candidates = new List<(int neighbor, List<Vector2> orientedTear, float sortKey)>();
+        int n = _pieceRects.Count;
+
         for (int j = 0; j < n; j++)
         {
             if (j == i) continue;
             string key = $"{i}_{j}";
-            if (!_tearEdges.ContainsKey(key)) continue;
-
-            // The tear profile starts at one edge endpoint and ends at the other
-            List<Vector2> tear = _tearEdges[key];
+            if (!_tearEdges.TryGetValue(key, out List<Vector2> tear)) continue;
             if (tear.Count < 2) continue;
 
-            Vector2 tStart = tear[0];
-            Vector2 tEnd   = tear[tear.Count - 1];
-            float eps = 0.001f;
+            Vector2 tA = tear[0];
+            Vector2 tB = tear[tear.Count - 1];
 
-            bool startsMatch = (Vector2.Distance(tStart, edgeFrom) < eps &&
-                                Vector2.Distance(tEnd,   edgeTo)   < eps);
-            bool endsMatch   = (Vector2.Distance(tStart, edgeTo)   < eps &&
-                                Vector2.Distance(tEnd,   edgeFrom) < eps);
+            // Both endpoints must sit on this side's constant coordinate (y for horizontal, x for vertical)
+            float edgeConst = isHorizontal ? edgeFrom.y : edgeFrom.x;
+            float tAConst   = isHorizontal ? tA.y       : tA.x;
+            float tBConst   = isHorizontal ? tB.y       : tB.x;
+            if (Mathf.Abs(tAConst - edgeConst) > eps || Mathf.Abs(tBConst - edgeConst) > eps)
+                continue;
 
-            if (startsMatch || endsMatch)
-                return j;
+            // Both endpoints must fall within the side's span
+            float sideMin = isHorizontal ? Mathf.Min(edgeFrom.x, edgeTo.x) : Mathf.Min(edgeFrom.y, edgeTo.y);
+            float sideMax = isHorizontal ? Mathf.Max(edgeFrom.x, edgeTo.x) : Mathf.Max(edgeFrom.y, edgeTo.y);
+            float tSpanA  = isHorizontal ? tA.x : tA.y;
+            float tSpanB  = isHorizontal ? tB.x : tB.y;
+            if (tSpanA < sideMin - eps || tSpanA > sideMax + eps) continue;
+            if (tSpanB < sideMin - eps || tSpanB > sideMax + eps) continue;
+
+            // Orient the tear to go in the same direction as edgeFrom→edgeTo
+            bool sidePositive = isHorizontal ? (edgeTo.x > edgeFrom.x) : (edgeTo.y > edgeFrom.y);
+            bool tearPositive = isHorizontal ? (tB.x    > tA.x)        : (tB.y    > tA.y);
+            List<Vector2> oriented;
+            if (sidePositive != tearPositive)
+            {
+                oriented = new List<Vector2>(tear);
+                oriented.Reverse();
+            }
+            else
+            {
+                oriented = tear;
+            }
+
+            float sortKey = isHorizontal ? oriented[0].x : oriented[0].y;
+            candidates.Add((j, oriented, sortKey));
         }
-        return -1;
-    }
 
-    List<Vector2> OrientTearToSide(List<Vector2> tear, Vector2 wantFrom, Vector2 wantTo)
-    {
-        if (tear.Count < 2) return tear;
-        float eps = 0.001f;
-        bool reversed = Vector2.Distance(tear[0], wantFrom) > eps;
-        if (reversed)
-        {
-            List<Vector2> r = new List<Vector2>(tear);
-            r.Reverse();
-            return r;
-        }
-        return tear;
+        // Sort sub-segments in the direction of edgeFrom→edgeTo
+        bool ascending = isHorizontal ? (edgeTo.x > edgeFrom.x) : (edgeTo.y > edgeFrom.y);
+        if (ascending)
+            candidates.Sort((a, b) => a.sortKey.CompareTo(b.sortKey));
+        else
+            candidates.Sort((a, b) => b.sortKey.CompareTo(a.sortKey));
+
+        return candidates.ConvertAll(c => (c.neighbor, c.orientedTear));
     }
 
     Mesh BuildMesh(List<Vector2> normalizedOutline, Vector3 pieceWorldCenter)
@@ -302,8 +340,8 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         {
             Vector2 n = normalizedOutline[k];
             Vector3 worldPt = NormalizedToWorld(n.x, n.y);
-            vertices[k] = worldPt - pieceWorldCenter; // local space
-            uvs[k]      = n;                          // UV = normalized coords
+            vertices[k] = worldPt - pieceWorldCenter;
+            uvs[k]      = n;
         }
 
         int[] tris = Triangulator.Triangulate(normalizedOutline);
@@ -323,7 +361,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void CreateGoldSeams()
     {
-        int n = config.pieceRects.Count;
+        int n = _pieceRects.Count;
         for (int a = 0; a < n; a++)
         {
             for (int b = a + 1; b < n; b++)
@@ -331,28 +369,25 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
                 string key = $"{a}_{b}";
                 if (!_tearEdges.TryGetValue(key, out List<Vector2> profile)) continue;
 
-                // Create LineRenderer child under GoldSeams
                 GameObject seamGo = new GameObject($"Seam_{a}_{b}");
                 seamGo.transform.SetParent(goldSeamsParent ?? puzzleCenter, false);
 
                 LineRenderer lr = seamGo.AddComponent<LineRenderer>();
                 lr.useWorldSpace   = true;
                 lr.positionCount   = profile.Count;
-                lr.startWidth      = config.goldSeamWidth;
-                lr.endWidth        = config.goldSeamWidth;
-                lr.material        = config.goldSeamMaterial;
-                lr.sortingOrder    = 10; // in front of pieces
-                lr.enabled         = false; // hidden until snap
+                lr.startWidth      = _data.goldSeamWidth;
+                lr.endWidth        = _data.goldSeamWidth;
+                lr.material        = goldSeamMaterial;
+                lr.sortingOrder    = 10;
+                lr.enabled         = false;
 
-                // Convert normalized → world
                 for (int k = 0; k < profile.Count; k++)
                 {
                     Vector3 wp = NormalizedToWorld(profile[k].x, profile[k].y);
-                    wp.z = -1f; // seam layer
+                    wp.z = -1f;
                     lr.SetPosition(k, wp);
                 }
 
-                // Register on both pieces
                 if (a < _pieces.Count) _pieces[a].adjacentSeams[b] = lr;
                 if (b < _pieces.Count) _pieces[b].adjacentSeams[a] = lr;
             }
@@ -365,14 +400,14 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void ScatterPieces()
     {
-        Debug.Log($"[Kintsugi] ScatterPieces — radius={config.scatterRadius}, pieces={_pieces.Count}");
-        var rng = new System.Random(config.randomSeed + 999);
+        Debug.Log($"[Kintsugi] ScatterPieces — radius={_data.scatterRadius}, pieces={_pieces.Count}");
+        var rng = new System.Random(_data.randomSeed + 999);
         float zBase = -0.1f;
 
         for (int i = 0; i < _pieces.Count; i++)
         {
             double angle  = rng.NextDouble() * Mathf.PI * 2.0;
-            double radius = rng.NextDouble() * config.scatterRadius;
+            double radius = rng.NextDouble() * _data.scatterRadius;
 
             Vector3 offset = new Vector3(
                 (float)(Mathf.Cos((float)angle) * radius),
@@ -383,8 +418,8 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
             Vector3 scatterPos = puzzleCenter.position + offset;
             _pieces[i].transform.position = scatterPos;
 
-            // Re-initialize with the actual scattered position for reference
-            _pieces[i].Initialize(gameController, config,
+            _pieces[i].Initialize(gameController,
+                                  _data.snapThreshold, _data.snapDuration, snapCurve,
                                   _pieces[i].targetWorldPosition,
                                   i, scatterPos);
         }
@@ -396,16 +431,15 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void CreateBackground()
     {
-        if (config.puzzleTexture == null) return;
+        if (_texture == null) return;
 
         GameObject bg = new GameObject("PuzzleBackground");
         bg.transform.SetParent(puzzleCenter, worldPositionStays: false);
-        bg.transform.localPosition = new Vector3(0f, 0f, 0.5f); // behind pieces
+        bg.transform.localPosition = new Vector3(0f, 0f, 0.5f);
 
-        // Create a sprite from the texture at 100 PPU
         Sprite sprite = Sprite.Create(
-            config.puzzleTexture,
-            new Rect(0, 0, config.puzzleTexture.width, config.puzzleTexture.height),
+            _texture,
+            new Rect(0, 0, _texture.width, _texture.height),
             new Vector2(0.5f, 0.5f),
             100f
         );
@@ -413,14 +447,13 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         SpriteRenderer sr = bg.AddComponent<SpriteRenderer>();
         sr.sprite       = sprite;
         sr.color        = new Color(1f, 1f, 1f, backgroundAlpha);
-        sr.sortingOrder = -1; // always behind pieces
+        sr.sortingOrder = -1;
 
-        // Scale GO so sprite fills exactly puzzleWorldWidth x puzzleWorldHeight
-        float spriteWorldW = config.puzzleTexture.width  / 100f;
-        float spriteWorldH = config.puzzleTexture.height / 100f;
+        float spriteWorldW = _texture.width  / 100f;
+        float spriteWorldH = _texture.height / 100f;
         bg.transform.localScale = new Vector3(
-            config.puzzleWorldWidth  / spriteWorldW,
-            config.puzzleWorldHeight / spriteWorldH,
+            _data.puzzleWorldWidth  / spriteWorldW,
+            _data.puzzleWorldHeight / spriteWorldH,
             1f
         );
     }
@@ -433,7 +466,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
     {
         Vector3 center = puzzleCenter.position;
         return center
-            + Vector3.right * (nx - 0.5f) * config.puzzleWorldWidth
-            + Vector3.up    * (ny - 0.5f) * config.puzzleWorldHeight;
+            + Vector3.right * (nx - 0.5f) * _data.puzzleWorldWidth
+            + Vector3.up    * (ny - 0.5f) * _data.puzzleWorldHeight;
     }
 }

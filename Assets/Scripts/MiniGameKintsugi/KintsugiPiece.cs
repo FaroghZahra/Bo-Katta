@@ -20,19 +20,25 @@ public class KintsugiPiece : MonoBehaviour
     public Dictionary<int, LineRenderer> adjacentSeams = new Dictionary<int, LineRenderer>();
 
     private KintsugiGameController _gc;
-    private KintsugiPuzzleConfig   _cfg;
+    private float          _snapThreshold;
+    private float          _snapDuration;
+    private AnimationCurve _snapCurve;
     private Vector3 _scatteredPosition;
 
     // -------------------------------------------------------------------------
 
     public void Initialize(KintsugiGameController gc,
-                           KintsugiPuzzleConfig   cfg,
+                           float snapThreshold,
+                           float snapDuration,
+                           AnimationCurve snapCurve,
                            Vector3 targetPos,
                            int     index,
                            Vector3 scatteredPos)
     {
         _gc               = gc;
-        _cfg              = cfg;
+        _snapThreshold    = snapThreshold;
+        _snapDuration     = snapDuration;
+        _snapCurve        = snapCurve;
         targetWorldPosition = targetPos;
         pieceIndex        = index;
         _scatteredPosition = scatteredPos;
@@ -52,7 +58,7 @@ public class KintsugiPiece : MonoBehaviour
         if (isSnapped) return false;
 
         float dist = Vector3.Distance(transform.position, targetWorldPosition);
-        if (dist <= _cfg.snapThreshold)
+        if (dist <= _snapThreshold)
         {
             StartCoroutine(SnapToTarget());
             return true;
@@ -68,11 +74,11 @@ public class KintsugiPiece : MonoBehaviour
         Vector3 startPos = transform.position;
         float elapsed = 0f;
 
-        while (elapsed < _cfg.snapDuration)
+        while (elapsed < _snapDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / _cfg.snapDuration);
-            float curved = _cfg.snapCurve.Evaluate(t);
+            float t = Mathf.Clamp01(elapsed / _snapDuration);
+            float curved = _snapCurve.Evaluate(t);
             transform.position = Vector3.Lerp(startPos, targetWorldPosition, curved);
             yield return null;
         }
@@ -95,7 +101,6 @@ public class KintsugiPiece : MonoBehaviour
             LineRenderer lr  = kvp.Value;
             if (lr == null) continue;
 
-            // Reveal if the neighbour is also snapped (or this is the second to snap)
             KintsugiPiece neighbor = _gc.GetPiece(neighborIdx);
             if (neighbor != null && neighbor.isSnapped)
                 lr.enabled = true;

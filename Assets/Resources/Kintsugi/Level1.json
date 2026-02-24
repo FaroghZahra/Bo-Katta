@@ -1,0 +1,18 @@
+{
+  "levelIndex": 1,
+  "pieceRects": [
+    {"x": 0.0, "y": 0.5, "w": 0.5, "h": 0.5},
+    {"x": 0.5, "y": 0.5, "w": 0.5, "h": 0.5},
+    {"x": 0.0, "y": 0.0, "w": 0.5, "h": 0.5},
+    {"x": 0.5, "y": 0.0, "w": 0.5, "h": 0.5}
+  ],
+  "puzzleWorldWidth": 2,
+  "puzzleWorldHeight": 2,
+  "tearSubdivisions": 12,
+  "tearAmplitude": 0.12,
+  "randomSeed": 42,
+  "snapThreshold": 2,
+  "snapDuration": 0.25,
+  "scatterRadius": 2.5,
+  "goldSeamWidth": 0.04
+}

@@ -54,7 +54,9 @@ public class CharacterMovement : MonoBehaviour
         if (other.CompareTag("Collectible"))
         {
             StopMoving();
-            MinigameMenuController.Instance?.OpenMenu();
+            CollectibleLevel cl = other.GetComponent<CollectibleLevel>();
+            int level = cl != null ? cl.levelIndex : 1;
+            MinigameMenuController.Instance?.OpenMenu(level);
         }
     }
 

@@ -21,8 +21,11 @@ public class MiniGameSequenceController : MonoBehaviour
     public GameObject foldItRoot;
 
     [Header("Controllers")]
-    public KintsugiGameController kintsugiController;
-    public GameController         foldItController;
+    public KintsugiGameController  kintsugiController;
+    public GameController          foldItController;
+
+    [Header("Generator")]
+    public KintsugiPuzzleGenerator kintsugiGenerator;
 
     [Header("Transition UI")]
     public TextMeshProUGUI transitionText;
@@ -32,6 +35,8 @@ public class MiniGameSequenceController : MonoBehaviour
 
     void Start()
     {
+        kintsugiGenerator.Initialize(GameEvents.CurrentLevel);
+
         kintsugiController.onComplete = OnKintsugiComplete;
         foldItController.onComplete   = OnFoldItComplete;
 

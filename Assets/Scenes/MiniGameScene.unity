@@ -305,11 +305,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ba4b27af80e0374eaac282d58d9a8b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: a66f30dd60a6990448c4de2f88b0f860, type: 2}
   gameController: {fileID: 15678409}
   pieceMaterial: {fileID: 2100000, guid: b96f8f4e57982f84dbcb72bb25f736d3, type: 2}
   puzzleCenter: {fileID: 1589972856}
   goldSeamsParent: {fileID: 1138326274}
+  levelTextures:
+  - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
+  - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
+  - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
+  goldSeamMaterial: {fileID: 2100000, guid: 18f1c689e6bd1e24f8f201b8a0af1109, type: 2}
+  snapCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   backgroundAlpha: 0.1
 --- !u!114 &15678409
 MonoBehaviour:
@@ -550,7 +578,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96991390cda922f40824e686b458e44b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperFold: {fileID: 89583469}
 --- !u!1 &206912206
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,7 +697,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96991390cda922f40824e686b458e44b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperFold: {fileID: 499555046}
 --- !u!1 &258224183
 GameObject:
   m_ObjectHideFlags: 0
@@ -1602,7 +1628,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96991390cda922f40824e686b458e44b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperFold: {fileID: 1847083200}
 --- !u!1001 &794366848
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1894,6 +1919,7 @@ MonoBehaviour:
   foldItRoot: {fileID: 1693317961}
   kintsugiController: {fileID: 15678409}
   foldItController: {fileID: 1010556320}
+  kintsugiGenerator: {fileID: 15678408}
   transitionText: {fileID: 382858331}
   transitionDuration: 0.1
 --- !u!1 &963194225
@@ -2252,7 +2278,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96991390cda922f40824e686b458e44b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperFold: {fileID: 794366850}
 --- !u!1001 &1292903561
 PrefabInstance:
   m_ObjectHideFlags: 0
