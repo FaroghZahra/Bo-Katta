@@ -7,10 +7,10 @@ public class CameraAutoFit : MonoBehaviour
 
     void Start()
     {
-        Fit();
+        Refit();
     }
 
-    void Fit()
+    public void Refit()
     {
         float screenRatio = (float)Screen.width / Screen.height;
         float targetRatio = background.bounds.size.x / background.bounds.size.y;

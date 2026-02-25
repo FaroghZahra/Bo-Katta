@@ -13,17 +13,13 @@ public class CollectibleManager : MonoBehaviour
     public TextMeshProUGUI hudCounterText;
 
     private int _collectedCount = 0;
+    private int _currentLevelIndex = 1;
     private List<GameObject> _allCollectibles = new List<GameObject>();
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
-        GameObject[] found = GameObject.FindGameObjectsWithTag("Collectible");
-        _allCollectibles = new List<GameObject>(found);
-        if (_allCollectibles.Count > 0)
-            totalCollectibles = _allCollectibles.Count;
     }
 
     private void Start()
@@ -31,8 +27,6 @@ public class CollectibleManager : MonoBehaviour
         UpdateHUD();
     }
 
-    private void OnEnable()  => GameEvents.OnMinigameWon += ResetAll;
-    private void OnDisable() => GameEvents.OnMinigameWon -= ResetAll;
 
     public void Collect(GameObject go, int levelIndex)
     {
@@ -43,7 +37,7 @@ public class CollectibleManager : MonoBehaviour
         UpdateHUD();
 
         if (_collectedCount >= totalCollectibles)
-            MinigameMenuController.Instance?.OpenMenu(levelIndex);
+            MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
     }
 
     public void ResetAll()
@@ -58,6 +52,15 @@ public class CollectibleManager : MonoBehaviour
             CollectibleAnimator anim = go.GetComponent<CollectibleAnimator>();
             anim?.Reactivate();
         }
+    }
+
+    public void SetupForLevel(GameObject[] collectibles, int levelIndex = 1)
+    {
+        _collectedCount = 0;
+        _currentLevelIndex = levelIndex;
+        _allCollectibles = new List<GameObject>(collectibles);
+        totalCollectibles = _allCollectibles.Count;
+        UpdateHUD();
     }
 
     private void UpdateHUD()

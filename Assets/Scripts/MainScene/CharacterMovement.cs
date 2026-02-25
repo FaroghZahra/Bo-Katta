@@ -1,96 +1,147 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
+[System.Serializable]
+public class PathPoint
+{
+    public Transform point;
+    [Tooltip("Character stops here and fires BreakpointReached (used to start collectible animations).")]
+    public bool stopHere;
+    [Tooltip("Swap to the next sprite in the sprites[] array and continue moving.")]
+    public bool rotateHere;
+}
+
 public class CharacterMovement : MonoBehaviour
 {
     public float moveSpeed = 3f;
 
-    [Tooltip("The Collectible the character walks toward. " +
-             "The movement direction is calculated from the character's " +
-             "start position to this target, matching the bridge slope.")]
-    public Transform destination;
+    [Header("Path")]
+    [Tooltip("Ordered list of waypoints the character walks through. Mark stopHere on points where it should wait.")]
+    public PathPoint[] path;
 
-    [Tooltip("Rotates the movement direction in degrees. " +
-             "Positive = counter-clockwise (left), Negative = clockwise (right).")]
-    public float directionAngleOffset = 0f;
+    [Tooltip("How close (world units) the character must be to a waypoint to count as reached.")]
+    public float reachDistance = 0.3f;
 
-    [Tooltip("Flip the movement direction 180°. Enable if the character walks backward.")]
-    public bool reverseDirection = false;
+    [Header("Visual")]
+    [Tooltip("The SpriteRenderer on the character (or its child).")]
+    public SpriteRenderer characterSprite;
 
-    [Header("Break Point")]
-    [Tooltip("Assign the BreakPoint Transform in the Inspector. No collider needed.")]
-    public Transform breakPoint;
+    [Tooltip("sprites[0] = initial facing. sprites[1] = after first rotateHere waypoint. Add more as needed.")]
+    public Sprite[] sprites;
 
-    [Tooltip("How close (world units) the character must be to the break point to stop.")]
-    public float breakPointStopDistance = 0.3f;
-
-    private bool isMoving = false;
-    private bool _breakPointTriggered = false;
-    private Rigidbody2D rb;
-    private Vector2 moveDirection;
-
-    private void Awake()
-    {
-        rb = GetComponent<Rigidbody2D>();
-    }
-
-    private void OnEnable()  => GameEvents.OnMinigameWon += OnMinigameWonHandler;
-    private void OnDisable() => GameEvents.OnMinigameWon -= OnMinigameWonHandler;
+    private int _spriteIndex = 0;
+    private int _nextIndex = 0;
+    private bool _isMoving = false;
 
     private void Start()
     {
-        if (destination != null)
+        if (path == null || path.Length == 0)
         {
-            Vector2 toTarget = (Vector2)destination.position - (Vector2)transform.position;
-            float angle = Mathf.Atan2(toTarget.y, toTarget.x) + directionAngleOffset * Mathf.Deg2Rad;
-            moveDirection = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            if (reverseDirection) moveDirection = -moveDirection;
+            Debug.LogWarning("CharacterMovement: 'Path' array is empty. Assign waypoints in the Inspector.", this);
+            return;
         }
-        else
-        {
-            moveDirection = Vector2.right;
-            Debug.LogWarning("CharacterMovement: no destination assigned.");
-        }
-
-        StartMoving();
+        AdvanceToWaypoint();
     }
 
     private void Update()
     {
-        if (isMoving && !_breakPointTriggered && breakPoint != null)
+        if (!_isMoving || path == null || _nextIndex >= path.Length) return;
+
+        PathPoint current = path[_nextIndex];
+        if (current.point == null)
         {
-            float dist = Vector2.Distance(transform.position, breakPoint.position);
-            if (dist <= breakPointStopDistance)
+            Debug.LogWarning($"CharacterMovement: waypoint at index {_nextIndex} has no Transform assigned.", this);
+            return;
+        }
+
+        Vector2 currentXY = transform.position;
+        Vector2 targetXY  = current.point.position;
+
+        Vector2 newXY = Vector2.MoveTowards(currentXY, targetXY, moveSpeed * Time.deltaTime);
+
+        // Write back XY only — Z is never touched
+        transform.position = new Vector3(newXY.x, newXY.y, transform.position.z);
+
+        if (Vector2.Distance(newXY, targetXY) <= reachDistance)
+        {
+            bool stop   = current.stopHere;
+            bool rotate = current.rotateHere;
+            Debug.Log($"[CharacterMovement] Reached path[{_nextIndex}] stopHere={stop} point={current.point?.name}");
+            _nextIndex++;
+
+            if (rotate) SwapSprite();
+
+            if (stop)
             {
-                _breakPointTriggered = true;
                 StopMoving();
                 GameEvents.BreakpointReached();
+            }
+            else
+            {
+                AdvanceToWaypoint();
             }
         }
     }
 
-    private void FixedUpdate()
+    private void SwapSprite()
     {
-        if (isMoving)
-            rb.velocity = moveDirection * moveSpeed;
+        if (characterSprite == null || sprites == null) return;
+        _spriteIndex++;
+        if (_spriteIndex < sprites.Length)
+            characterSprite.sprite = sprites[_spriteIndex];
     }
 
-    private void OnMinigameWonHandler()
+    private void AdvanceToWaypoint()
     {
-        if (breakPoint != null)
-            breakPoint.gameObject.SetActive(false);
+        if (path == null || _nextIndex >= path.Length)
+        {
+            Debug.Log($"[CharacterMovement] AdvanceToWaypoint: _nextIndex={_nextIndex} >= path.Length={path?.Length} → StopMoving");
+            StopMoving();
+            return;
+        }
+
+        Transform target = path[_nextIndex].point;
+        if (target == null)
+        {
+            Debug.LogWarning($"[CharacterMovement] AdvanceToWaypoint: path[{_nextIndex}].point is NULL → frozen", this);
+            StopMoving();
+            return;
+        }
+
+        Debug.Log($"[CharacterMovement] Advancing → path[{_nextIndex}] '{target.name}'");
+        _isMoving = true;
     }
 
-    /// <summary>Can still be wired to a button if manual control is ever needed.</summary>
-    public void StartMoving()
-    {
-        if (isMoving) return;
-        isMoving = true;
-    }
+    /// <summary>Resumes walking after a stop point (called by LevelProgressionController after a minigame win).</summary>
+    public void ResumeMoving() => AdvanceToWaypoint();
 
     public void StopMoving()
     {
-        isMoving = false;
-        rb.velocity = Vector2.zero;
+        _isMoving = false;
+    }
+
+    // Draws the path in the Scene view so you can see it without pressing Play
+    private void OnDrawGizmos()
+    {
+        if (path == null || path.Length == 0) return;
+
+        for (int i = 0; i < path.Length; i++)
+        {
+            if (path[i].point == null) continue;
+
+            if (path[i].stopHere)
+                Gizmos.color = Color.red;
+            else if (path[i].rotateHere)
+                Gizmos.color = Color.magenta;
+            else
+                Gizmos.color = Color.cyan;
+
+            Gizmos.DrawSphere(path[i].point.position, 0.15f);
+
+            if (i > 0 && path[i - 1].point != null)
+            {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(path[i - 1].point.position, path[i].point.position);
+            }
+        }
     }
 }

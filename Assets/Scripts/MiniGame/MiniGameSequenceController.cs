@@ -72,6 +72,18 @@ public class MiniGameSequenceController : MonoBehaviour
 
     void OnKintsugiComplete()
     {
+        if (GameEvents.CurrentLevel == 3)
+        {
+            if (transitionText != null)
+                transitionText.gameObject.SetActive(false);
+
+            if (isEmbedded)
+                GameEvents.MinigameWon();
+            else
+                SceneManager.LoadScene(nextSceneName);
+            return;
+        }
+
         _currentPhase = Phase.Transition;
         StartCoroutine(TransitionToFoldIt());
     }

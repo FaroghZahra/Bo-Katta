@@ -41,6 +41,7 @@ public class MinigameMenuController : MonoBehaviour
     public void OpenMenu(int level = 1)
     {
         if (minigameIsLoaded) return;
+        Debug.Log($"[MinigameMenuController] Opening level {level}");
         GameEvents.CurrentLevel = level;
         dimOverlay?.SetActive(true);
 
@@ -130,6 +131,8 @@ public class MinigameMenuController : MonoBehaviour
         dimOverlay?.SetActive(false);
 
         yield return StartCoroutine(ShowVictoryMessage());
+
+        GameEvents.LevelProgression(GameEvents.CurrentLevel);
     }
 
     private IEnumerator ShowVictoryMessage()

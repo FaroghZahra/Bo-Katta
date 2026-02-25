@@ -176,7 +176,7 @@ MonoBehaviour:
   levelTextures:
   - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
   - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
-  - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
+  - {fileID: 2800000, guid: 33b137c4040f83145ac1c8fd0cab7485, type: 3}
   goldSeamMaterial: {fileID: 2100000, guid: 18f1c689e6bd1e24f8f201b8a0af1109, type: 2}
   snapCurve:
     serializedVersion: 2
@@ -219,74 +219,6 @@ MonoBehaviour:
   nextSceneName: MainScene
   clickBlocked: 0
   traceProximity: 0.25
---- !u!1 &314507398
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 314507401}
-  - component: {fileID: 314507400}
-  - component: {fileID: 314507399}
-  m_Layer: 9
-  m_Name: EventSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &314507399
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 314507398}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SendPointerHoverToParent: 1
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
---- !u!114 &314507400
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 314507398}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
-  m_sendNavigationEvents: 1
-  m_DragThreshold: 10
---- !u!4 &314507401
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 314507398}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &360451018
 GameObject:
   m_ObjectHideFlags: 0
@@ -783,7 +715,7 @@ MonoBehaviour:
   - {fileID: 8892836579218807881, guid: 8f33b261ed7bf9d4398c434ee7bb5ff1, type: 3}
   kintsugiGenerator: {fileID: 15678408}
   transitionText: {fileID: 382858331}
-  transitionDuration: 0.1
+  transitionDuration: 0.5
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -1071,7 +1003,6 @@ SceneRoots:
   - {fileID: 963194228}
   - {fileID: 705507995}
   - {fileID: 360451022}
-  - {fileID: 314507401}
   - {fileID: 1602373049}
   - {fileID: 1693317962}
   - {fileID: 932670792}
