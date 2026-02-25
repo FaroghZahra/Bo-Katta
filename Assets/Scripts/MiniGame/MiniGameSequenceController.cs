@@ -21,11 +21,16 @@ public class MiniGameSequenceController : MonoBehaviour
     public GameObject foldItRoot;
 
     [Header("Controllers")]
-    public KintsugiGameController  kintsugiController;
-    public GameController          foldItController;
+    public KintsugiGameController kintsugiController;
+
+    [Header("FoldIt Level Prefabs")]
+    [Tooltip("Index 0 = Level 1, 1 = Level 2, 2 = Level 3")]
+    public GameObject[] foldItLevelPrefabs;
 
     [Header("Generator")]
     public KintsugiPuzzleGenerator kintsugiGenerator;
+
+    private GameController foldItController;
 
     [Header("Transition UI")]
     public TextMeshProUGUI transitionText;
@@ -37,11 +42,24 @@ public class MiniGameSequenceController : MonoBehaviour
     {
         kintsugiGenerator.Initialize(GameEvents.CurrentLevel);
 
+        // Remove the orange background Plane and any scene-baked level prefab instance
+        // that were placed in FoldItRoot during editor setup. Boundary colliders are kept.
+        for (int i = foldItRoot.transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = foldItRoot.transform.GetChild(i);
+            if (child.name == "Plane" || child.name.StartsWith("FoldItLevel"))
+                Destroy(child.gameObject);
+        }
+
+        // Instantiate the correct level prefab while foldItRoot is inactive
+        // so Awake/Start on the prefab don't run until we activate foldItRoot.
+        int prefabIndex = Mathf.Clamp(GameEvents.CurrentLevel - 1, 0, foldItLevelPrefabs.Length - 1);
+        GameObject foldItInstance = Instantiate(foldItLevelPrefabs[prefabIndex], foldItRoot.transform);
+        foldItController = foldItInstance.GetComponentInChildren<GameController>(true);
+
         kintsugiController.onComplete = OnKintsugiComplete;
         foldItController.onComplete   = OnFoldItComplete;
 
-        // Both roots are active in the editor so their Start() runs first (execution order +100).
-        // Hide FoldIt after all child Start() calls have finished initialising.
         foldItRoot.SetActive(false);
 
         // Show the Kintsugi phase label immediately.

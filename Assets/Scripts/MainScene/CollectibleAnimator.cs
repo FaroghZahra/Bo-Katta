@@ -7,13 +7,12 @@ public class CollectibleAnimator : MonoBehaviour
     public float pulseScale = 1.15f;
     public float pulseDuration = 0.6f;
 
-    private void Start()
-    {
-        PlayPulse();
-    }
+    private bool _interactable = false;
 
+    private void OnEnable()  => GameEvents.OnBreakpointReached += Activate;
     private void OnDisable()
     {
+        GameEvents.OnBreakpointReached -= Activate;
         DOTween.Kill(transform);
     }
 
@@ -22,8 +21,16 @@ public class CollectibleAnimator : MonoBehaviour
         DOTween.Kill(transform);
     }
 
+    private void Activate()
+    {
+        _interactable = true;
+        PlayPulse();
+    }
+
     private void OnMouseDown()
     {
+        if (!_interactable) return;
+
         CollectibleLevel cl = GetComponent<CollectibleLevel>();
         int levelIndex = cl != null ? cl.levelIndex : 1;
         CollectibleManager.Instance?.Collect(gameObject, levelIndex);
@@ -31,6 +38,7 @@ public class CollectibleAnimator : MonoBehaviour
 
     public void Reactivate()
     {
+        _interactable = true;
         DOTween.Kill(transform);
         transform.localScale = Vector3.one;
         PlayPulse();
