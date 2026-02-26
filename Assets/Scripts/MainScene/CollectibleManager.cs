@@ -13,6 +13,10 @@ public class CollectibleManager : MonoBehaviour
     public TextMeshProUGUI hudCounterText;
     public TextMeshProUGUI goldHudText;
 
+    // If set, called instead of OpenMenu when all collectibles (+ gold, if required) are collected.
+    // Automatically cleared after one use.
+    public System.Action onAllCollectedOverride;
+
     private int _collectedCount = 0;
     private bool _goldItemCollected = false;
     private int _currentLevelIndex = 1;
@@ -40,7 +44,18 @@ public class CollectibleManager : MonoBehaviour
         UpdateHUD();
 
         if (_collectedCount >= totalCollectibles && _goldItemCollected)
-            MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
+        {
+            if (onAllCollectedOverride != null)
+            {
+                var cb = onAllCollectedOverride;
+                onAllCollectedOverride = null;
+                cb.Invoke();
+            }
+            else
+            {
+                MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
+            }
+        }
     }
 
     public void ResetAll()
@@ -56,6 +71,7 @@ public class CollectibleManager : MonoBehaviour
         _currentLevelIndex = levelIndex;
         _allCollectibles = new List<GameObject>(collectibles);
         totalCollectibles = _allCollectibles.Count;
+        onAllCollectedOverride = null;  // clear stale callbacks
         UpdateHUD();
     }
 
@@ -64,7 +80,18 @@ public class CollectibleManager : MonoBehaviour
         _goldItemCollected = true;
         UpdateGoldHUD();
         if (_collectedCount >= totalCollectibles)
-            MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
+        {
+            if (onAllCollectedOverride != null)
+            {
+                var cb = onAllCollectedOverride;
+                onAllCollectedOverride = null;
+                cb.Invoke();
+            }
+            else
+            {
+                MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
+            }
+        }
     }
 
     private void UpdateHUD()

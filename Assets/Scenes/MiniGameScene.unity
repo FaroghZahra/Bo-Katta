@@ -176,7 +176,7 @@ MonoBehaviour:
   levelTextures:
   - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
   - {fileID: 2800000, guid: 03fc68edbfef49f49ae3d1bca10c00ca, type: 3}
-  - {fileID: 2800000, guid: 33b137c4040f83145ac1c8fd0cab7485, type: 3}
+  - {fileID: 2800000, guid: b49f4f68bb6202c43bf536d7bfa18ba7, type: 3}
   goldSeamMaterial: {fileID: 2100000, guid: 18f1c689e6bd1e24f8f201b8a0af1109, type: 2}
   snapCurve:
     serializedVersion: 2

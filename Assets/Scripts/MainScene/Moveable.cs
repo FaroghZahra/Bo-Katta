@@ -55,6 +55,18 @@ public class Moveable : MonoBehaviour
         _canInteract = true;
     }
 
+    /// <summary>Directly makes this moveable interactable (used when revealed mid-game, not via BreakpointReached).</summary>
+    public void MakeInteractable()
+    {
+        if (moveableType == MoveableType.Barrel)
+        {
+            linkedCollectible?.Activate();
+            linkedGoldCollectible?.Activate();
+            return;
+        }
+        _canInteract = true;
+    }
+
     private void Update()
     {
         if (!_canInteract || _activated || _col == null || _sceneCamera == null) return;

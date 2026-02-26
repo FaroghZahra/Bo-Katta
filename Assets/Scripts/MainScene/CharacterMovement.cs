@@ -8,6 +8,10 @@ public class PathPoint
     public bool stopHere;
     [Tooltip("Swap to the next sprite in the sprites[] array and continue moving.")]
     public bool rotateHere;
+    [Tooltip("Stop here and open the minigame instead of waiting for collectibles.")]
+    public bool playMinigameHere;
+    [Tooltip("Which level minigame to open (only used when playMinigameHere is true).")]
+    public int playMinigameLevel = 3;
 }
 
 public class CharacterMovement : MonoBehaviour
@@ -63,6 +67,14 @@ public class CharacterMovement : MonoBehaviour
 
         if (Vector2.Distance(newXY, targetXY) <= reachDistance)
         {
+            if (current.playMinigameHere)
+            {
+                _nextIndex++;
+                StopMoving();
+                MinigameMenuController.Instance?.OpenMenu(current.playMinigameLevel);
+                return;
+            }
+
             bool stop   = current.stopHere;
             bool rotate = current.rotateHere;
             Debug.Log($"[CharacterMovement] Reached path[{_nextIndex}] stopHere={stop} point={current.point?.name}");
