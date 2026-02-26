@@ -27,11 +27,11 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
     public float backgroundAlpha = 0.1f;
 
     // Runtime data loaded from JSON
-    private KintsugiLevelData    _data;
-    private Texture2D            _texture;
-    private List<Rect>           _pieceRects;
+    private KintsugiLevelData         _data;
+    private Texture2D                 _texture;
+    private List<List<Vector2>>       _polyPieces = new List<List<Vector2>>();
 
-    // "minIdx_maxIdx" → normalized tear points (A's view)
+    // "i_j" → tear profile from piece i's winding perspective
     private Dictionary<string, List<Vector2>> _tearEdges = new Dictionary<string, List<Vector2>>();
     private List<KintsugiPiece> _pieces = new List<KintsugiPiece>();
 
@@ -53,14 +53,46 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         }
 
         _data = JsonUtility.FromJson<KintsugiLevelData>(json.text);
-        if (_data == null || _data.pieceRects == null || _data.pieceRects.Count == 0)
+        if (_data == null)
         {
-            Debug.LogError($"[KintsugiPuzzleGenerator] Level{levelIndex}.json parsed but has no pieceRects.");
+            Debug.LogError($"[KintsugiPuzzleGenerator] Level{levelIndex}.json failed to parse.");
             return;
         }
 
-        // Convert KintsugiRectData → UnityEngine.Rect
-        _pieceRects = _data.pieceRects.ConvertAll(d => new Rect(d.x, d.y, d.w, d.h));
+        // Build unified polygon list from either pieces[] (polygon) or pieceRects[] (legacy rect)
+        _polyPieces.Clear();
+        _tearEdges.Clear();
+        _pieces.Clear();
+
+        if (_data.pieces != null && _data.pieces.Count > 0)
+        {
+            foreach (var pd in _data.pieces)
+            {
+                var verts = new List<Vector2>();
+                foreach (var v in pd.vertices)
+                    verts.Add(new Vector2(v.x, v.y));
+                _polyPieces.Add(verts);
+            }
+        }
+        else if (_data.pieceRects != null && _data.pieceRects.Count > 0)
+        {
+            foreach (var d in _data.pieceRects)
+            {
+                // CCW quad: BL → BR → TR → TL
+                _polyPieces.Add(new List<Vector2>
+                {
+                    new Vector2(d.x,       d.y),
+                    new Vector2(d.x + d.w, d.y),
+                    new Vector2(d.x + d.w, d.y + d.h),
+                    new Vector2(d.x,       d.y + d.h),
+                });
+            }
+        }
+        else
+        {
+            Debug.LogError($"[KintsugiPuzzleGenerator] Level{levelIndex}.json has neither pieces nor pieceRects.");
+            return;
+        }
 
         // Pick texture by level index (0-based array)
         int texIdx = levelIndex - 1;
@@ -78,23 +110,20 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
     }
 
     // =========================================================================
-    // Tear Edge Generation
+    // Tear Edge Generation (works for any polygon layout)
     // =========================================================================
 
     void GenerateTearEdges()
     {
-        int n = _pieceRects.Count;
+        int n = _polyPieces.Count;
         for (int a = 0; a < n; a++)
         {
             for (int b = a + 1; b < n; b++)
             {
-                Rect rA = _pieceRects[a];
-                Rect rB = _pieceRects[b];
-
-                if (TryGetSharedEdge(rA, rB, out Vector2 start, out Vector2 end, out bool isHorizontal))
+                if (TryGetSharedPolyEdge(a, b, out Vector2 start, out Vector2 end))
                 {
                     int edgeHash = a * 1000 + b;
-                    List<Vector2> profile = GenerateTearProfile(start, end, isHorizontal, edgeHash);
+                    List<Vector2> profile = GenerateTearProfile(start, end, edgeHash);
 
                     _tearEdges[$"{a}_{b}"] = profile;
                     List<Vector2> reversed = new List<Vector2>(profile);
@@ -105,49 +134,37 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         }
     }
 
-    bool TryGetSharedEdge(Rect rA, Rect rB,
-                          out Vector2 start, out Vector2 end, out bool isHorizontal)
+    // Finds the shared edge between polygons a and b (opposite winding).
+    // Returns the edge direction as seen from piece a's winding.
+    bool TryGetSharedPolyEdge(int a, int b, out Vector2 start, out Vector2 end)
     {
-        start = end = Vector2.zero;
-        isHorizontal = false;
-
         float eps = 0.001f;
+        List<Vector2> polyA = _polyPieces[a];
+        List<Vector2> polyB = _polyPieces[b];
+        int nA = polyA.Count, nB = polyB.Count;
 
-        // Horizontal shared edge: rA bottom = rB top (or flipped)
-        if (Mathf.Abs(rA.yMin - rB.yMax) < eps || Mathf.Abs(rB.yMin - rA.yMax) < eps)
+        for (int i = 0; i < nA; i++)
         {
-            float xOverlapMin = Mathf.Max(rA.xMin, rB.xMin);
-            float xOverlapMax = Mathf.Min(rA.xMax, rB.xMax);
-            if (xOverlapMax > xOverlapMin + eps)
+            Vector2 a0 = polyA[i];
+            Vector2 a1 = polyA[(i + 1) % nA];
+
+            for (int j = 0; j < nB; j++)
             {
-                float y = Mathf.Abs(rA.yMin - rB.yMax) < eps ? rA.yMin : rA.yMax;
-                start = new Vector2(xOverlapMin, y);
-                end   = new Vector2(xOverlapMax, y);
-                isHorizontal = true;
-                return true;
+                Vector2 b0 = polyB[j];
+                Vector2 b1 = polyB[(j + 1) % nB];
+
+                // Adjacent pieces wind the shared edge in opposite directions: a0=b1, a1=b0
+                if (Vector2.Distance(a0, b1) < eps && Vector2.Distance(a1, b0) < eps)
+                {
+                    start = a0; end = a1; return true;
+                }
             }
         }
 
-        // Vertical shared edge: rA right = rB left (or flipped)
-        if (Mathf.Abs(rA.xMax - rB.xMin) < eps || Mathf.Abs(rB.xMax - rA.xMin) < eps)
-        {
-            float yOverlapMin = Mathf.Max(rA.yMin, rB.yMin);
-            float yOverlapMax = Mathf.Min(rA.yMax, rB.yMax);
-            if (yOverlapMax > yOverlapMin + eps)
-            {
-                float x = Mathf.Abs(rA.xMax - rB.xMin) < eps ? rA.xMax : rA.xMin;
-                start = new Vector2(x, yOverlapMin);
-                end   = new Vector2(x, yOverlapMax);
-                isHorizontal = false;
-                return true;
-            }
-        }
-
-        return false;
+        start = end = Vector2.zero; return false;
     }
 
-    List<Vector2> GenerateTearProfile(Vector2 start, Vector2 end,
-                                       bool isHorizontal, int edgeHash)
+    List<Vector2> GenerateTearProfile(Vector2 start, Vector2 end, int edgeHash)
     {
         var rng = new System.Random(_data.randomSeed + edgeHash);
         int subdivs = _data.tearSubdivisions;
@@ -155,17 +172,14 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         List<Vector2> points = new List<Vector2> { start };
 
         Vector2 dir  = (end - start).normalized;
-        Vector2 perp = isHorizontal ? new Vector2(0f, 1f) : new Vector2(1f, 0f);
+        Vector2 perp = new Vector2(-dir.y, dir.x); // perpendicular to the edge
 
         for (int i = 1; i < subdivs; i++)
         {
             float t = (float)i / subdivs;
             Vector2 basePoint = Vector2.Lerp(start, end, t);
             float offset = ((float)rng.NextDouble() * 2f - 1f) * _data.tearAmplitude;
-            Vector2 displaced = basePoint + perp * offset;
-            displaced.x = Mathf.Clamp01(displaced.x);
-            displaced.y = Mathf.Clamp01(displaced.y);
-            points.Add(displaced);
+            points.Add(basePoint + perp * offset);
         }
 
         points.Add(end);
@@ -178,14 +192,16 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     void CreatePieces()
     {
-        int n = _pieceRects.Count;
+        int n = _polyPieces.Count;
         for (int i = 0; i < n; i++)
         {
-            Rect rect = _pieceRects[i];
+            List<Vector2> poly = _polyPieces[i];
 
-            float cx = rect.x + rect.width  * 0.5f;
-            float cy = rect.y + rect.height * 0.5f;
-            Vector3 pieceWorldCenter = NormalizedToWorld(cx, cy);
+            // Centroid of the polygon vertices
+            Vector2 centroid = Vector2.zero;
+            foreach (var v in poly) centroid += v;
+            centroid /= poly.Count;
+            Vector3 pieceWorldCenter = NormalizedToWorld(centroid.x, centroid.y);
 
             List<Vector2> outline = BuildPieceOutline(i);
             Mesh mesh = BuildMesh(outline, pieceWorldCenter);
@@ -207,14 +223,14 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
                 mr.material = mat;
             }
 
-            PolygonCollider2D poly = go.AddComponent<PolygonCollider2D>();
+            PolygonCollider2D poly2d = go.AddComponent<PolygonCollider2D>();
             Vector2[] localPath = new Vector2[outline.Count];
             for (int k = 0; k < outline.Count; k++)
             {
                 Vector3 worldPt = NormalizedToWorld(outline[k].x, outline[k].y);
                 localPath[k] = (Vector2)(worldPt - pieceWorldCenter);
             }
-            poly.SetPath(0, localPath);
+            poly2d.SetPath(0, localPath);
 
             KintsugiPiece piece = go.AddComponent<KintsugiPiece>();
             piece.Initialize(gameController,
@@ -225,110 +241,44 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         }
     }
 
+    // Builds the outline for piece i: walks each polygon edge, replacing shared edges
+    // with their stored tear profile (from piece i's winding perspective).
     List<Vector2> BuildPieceOutline(int i)
     {
-        Rect r = _pieceRects[i];
-
-        Vector2 BL = new Vector2(r.xMin, r.yMin);
-        Vector2 BR = new Vector2(r.xMax, r.yMin);
-        Vector2 TR = new Vector2(r.xMax, r.yMax);
-        Vector2 TL = new Vector2(r.xMin, r.yMax);
-
-        var sides = new (Vector2 from, Vector2 to, bool isHorizontal)[]
-        {
-            (BL, BR, true),
-            (BR, TR, false),
-            (TR, TL, true),
-            (TL, BL, false),
-        };
-
+        List<Vector2> poly = _polyPieces[i];
+        int n = poly.Count;
         List<Vector2> outline = new List<Vector2>();
+        float eps = 0.001f;
 
-        foreach (var side in sides)
+        for (int k = 0; k < n; k++)
         {
-            var segments = FindAllNeighborsOnEdge(i, side.from, side.to, side.isHorizontal);
+            Vector2 from = poly[k];
+            Vector2 to   = poly[(k + 1) % n];
 
-            if (segments.Count == 0)
+            bool foundTear = false;
+            for (int j = 0; j < _polyPieces.Count; j++)
             {
-                // Outer edge — side.from is already the last outline point
-                outline.Add(side.to);
-            }
-            else
-            {
-                // Concatenate all sub-segment tear profiles in order.
-                // Skip index 0 of each segment: it's the junction already added by the previous entry.
-                foreach (var (_, orientedTear) in segments)
+                if (j == i) continue;
+                string key = $"{i}_{j}";
+                if (!_tearEdges.TryGetValue(key, out List<Vector2> tear)) continue;
+
+                // "i_j" is already oriented in piece i's winding direction
+                if (Vector2.Distance(tear[0], from) < eps &&
+                    Vector2.Distance(tear[tear.Count - 1], to) < eps)
                 {
-                    for (int k = 1; k < orientedTear.Count; k++)
-                        outline.Add(orientedTear[k]);
+                    // Skip tear[0] (== from, implicit from previous edge); add rest
+                    for (int m = 1; m < tear.Count; m++)
+                        outline.Add(tear[m]);
+                    foundTear = true;
+                    break;
                 }
             }
+
+            if (!foundTear)
+                outline.Add(to); // outer edge — just add the endpoint
         }
 
         return outline;
-    }
-
-    // Returns all tear sub-segments along the given side, each oriented from→to, sorted in that direction.
-    // Handles the case where a single side is shared with multiple neighbours (T-junction layouts).
-    List<(int, List<Vector2>)> FindAllNeighborsOnEdge(int i,
-                                                       Vector2 edgeFrom, Vector2 edgeTo,
-                                                       bool isHorizontal)
-    {
-        float eps = 0.001f;
-        var candidates = new List<(int neighbor, List<Vector2> orientedTear, float sortKey)>();
-        int n = _pieceRects.Count;
-
-        for (int j = 0; j < n; j++)
-        {
-            if (j == i) continue;
-            string key = $"{i}_{j}";
-            if (!_tearEdges.TryGetValue(key, out List<Vector2> tear)) continue;
-            if (tear.Count < 2) continue;
-
-            Vector2 tA = tear[0];
-            Vector2 tB = tear[tear.Count - 1];
-
-            // Both endpoints must sit on this side's constant coordinate (y for horizontal, x for vertical)
-            float edgeConst = isHorizontal ? edgeFrom.y : edgeFrom.x;
-            float tAConst   = isHorizontal ? tA.y       : tA.x;
-            float tBConst   = isHorizontal ? tB.y       : tB.x;
-            if (Mathf.Abs(tAConst - edgeConst) > eps || Mathf.Abs(tBConst - edgeConst) > eps)
-                continue;
-
-            // Both endpoints must fall within the side's span
-            float sideMin = isHorizontal ? Mathf.Min(edgeFrom.x, edgeTo.x) : Mathf.Min(edgeFrom.y, edgeTo.y);
-            float sideMax = isHorizontal ? Mathf.Max(edgeFrom.x, edgeTo.x) : Mathf.Max(edgeFrom.y, edgeTo.y);
-            float tSpanA  = isHorizontal ? tA.x : tA.y;
-            float tSpanB  = isHorizontal ? tB.x : tB.y;
-            if (tSpanA < sideMin - eps || tSpanA > sideMax + eps) continue;
-            if (tSpanB < sideMin - eps || tSpanB > sideMax + eps) continue;
-
-            // Orient the tear to go in the same direction as edgeFrom→edgeTo
-            bool sidePositive = isHorizontal ? (edgeTo.x > edgeFrom.x) : (edgeTo.y > edgeFrom.y);
-            bool tearPositive = isHorizontal ? (tB.x    > tA.x)        : (tB.y    > tA.y);
-            List<Vector2> oriented;
-            if (sidePositive != tearPositive)
-            {
-                oriented = new List<Vector2>(tear);
-                oriented.Reverse();
-            }
-            else
-            {
-                oriented = tear;
-            }
-
-            float sortKey = isHorizontal ? oriented[0].x : oriented[0].y;
-            candidates.Add((j, oriented, sortKey));
-        }
-
-        // Sort sub-segments in the direction of edgeFrom→edgeTo
-        bool ascending = isHorizontal ? (edgeTo.x > edgeFrom.x) : (edgeTo.y > edgeFrom.y);
-        if (ascending)
-            candidates.Sort((a, b) => a.sortKey.CompareTo(b.sortKey));
-        else
-            candidates.Sort((a, b) => b.sortKey.CompareTo(a.sortKey));
-
-        return candidates.ConvertAll(c => (c.neighbor, c.orientedTear));
     }
 
     Mesh BuildMesh(List<Vector2> normalizedOutline, Vector3 pieceWorldCenter)
@@ -365,7 +315,7 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
         List<SeamTraceState> allSeams = new List<SeamTraceState>();
         Transform seamParent = goldSeamsParent ?? puzzleCenter;
 
-        int n = _pieceRects.Count;
+        int n = _polyPieces.Count;
         for (int a = 0; a < n; a++)
         {
             for (int b = a + 1; b < n; b++)

@@ -21,6 +21,7 @@ public class LevelProgressionController : MonoBehaviour
 
     [Header("Rewards")]
     public BridgeRepairReward bridgeRepairReward;
+    public CatSequenceController catSequenceController;
 
     private void Awake()
     {
@@ -52,11 +53,13 @@ public class LevelProgressionController : MonoBehaviour
                 bridgeRepairReward.Play(onComplete: () =>
                 {
                     SwapBackground(1);
+                    catSequenceController?.gameObject.SetActive(true);
                     characterMovement?.ResumeMoving();
                 });
             else
             {
                 SwapBackground(1);
+                catSequenceController?.gameObject.SetActive(true);
                 characterMovement?.ResumeMoving();
             }
         }
@@ -68,7 +71,10 @@ public class LevelProgressionController : MonoBehaviour
             moveablesLevel2?.SetActive(false);
             moveablesLevel3?.SetActive(true);
             RegisterGroupWithManager(collectiblesLevel3, 3);
-            characterMovement?.ResumeMoving();
+            if (catSequenceController != null)
+                catSequenceController.PlaySequence(() => characterMovement?.ResumeMoving());
+            else
+                characterMovement?.ResumeMoving();
         }
         else if (completedLevel == 3)
         {

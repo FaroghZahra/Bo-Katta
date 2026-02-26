@@ -84,10 +84,9 @@ public class CharacterMovement : MonoBehaviour
 
     private void SwapSprite()
     {
-        if (characterSprite == null || sprites == null) return;
-        _spriteIndex++;
-        if (_spriteIndex < sprites.Length)
-            characterSprite.sprite = sprites[_spriteIndex];
+        if (characterSprite == null || sprites == null || sprites.Length == 0) return;
+        _spriteIndex = (_spriteIndex + 1) % sprites.Length;
+        characterSprite.sprite = sprites[_spriteIndex];
     }
 
     private void AdvanceToWaypoint()
