@@ -13,6 +13,9 @@ public class MinigameMenuController : MonoBehaviour
     [Header("Victory UI")]
     public TextMeshProUGUI victoryText;        // "Congratulations!" text, starts inactive
 
+    [Header("HUD")]
+    public GameObject seekFragmentsText;       // "Seek the fragments" label — hidden during minigame
+
     [Header("Scene")]
     public string minigameSceneName = "MiniGameScene";
 
@@ -48,6 +51,7 @@ public class MinigameMenuController : MonoBehaviour
         GameEvents.CurrentLevel = level;
         _cameraZoom?.SetZoomEnabled(false);
         dimOverlay?.SetActive(true);
+        seekFragmentsText?.SetActive(false);
 
         AsyncOperation loadOp = SceneManager.LoadSceneAsync(minigameSceneName, LoadSceneMode.Additive);
         if (loadOp == null)
@@ -133,6 +137,7 @@ public class MinigameMenuController : MonoBehaviour
         minigameIsLoaded = false;
 
         dimOverlay?.SetActive(false);
+        seekFragmentsText?.SetActive(true);
         _cameraZoom?.SetZoomEnabled(true);
 
         yield return StartCoroutine(ShowVictoryMessage());
