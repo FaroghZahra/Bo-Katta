@@ -20,6 +20,7 @@ public class SeamTraceState
 /// Central input controller for the Kintsugi puzzle.
 /// Mirrors GameController.cs (FoldIt): isEmbedded flag, clickBlocked, GameEvents.MinigameWon().
 /// </summary>
+[RequireComponent(typeof(AudioSource))]
 public class KintsugiGameController : MonoBehaviour
 {
     [Header("Embed / Standalone")]
@@ -28,6 +29,10 @@ public class KintsugiGameController : MonoBehaviour
 
     [HideInInspector] public System.Action onComplete;
     [HideInInspector] public bool clickBlocked = false;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip _snapSound;
+    private AudioSource _audioSource;
 
     [Header("Tracing")]
     public float traceProximity = 0.25f;   // World-unit reach for cursor→seam-point detection
@@ -50,6 +55,8 @@ public class KintsugiGameController : MonoBehaviour
 
     void Awake()
     {
+        _audioSource = GetComponent<AudioSource>();
+
         // Prefer a camera in the same scene (safe under additive loading).
         // Camera.main can be ambiguous or null when two scenes are loaded together.
         foreach (Camera c in FindObjectsOfType<Camera>())
@@ -305,6 +312,8 @@ public class KintsugiGameController : MonoBehaviour
     public void OnPieceSnapped(KintsugiPiece piece)
     {
         _snappedCount++;
+        if (_snapSound != null && _audioSource != null)
+            _audioSource.PlayOneShot(_snapSound);
 
         // Notify neighbours to activate seams that are now ready
         foreach (var kvp in piece.adjacentSeams)

@@ -5,6 +5,7 @@ using UnityEngine;
 /// Player performs horizontal drag strokes; accumulated distance drives
 /// 6-frame sun sprite animation. Reaching completionDistance fires onComplete.
 /// </summary>
+[RequireComponent(typeof(AudioSource))]
 public class OrigamiSwipeController : MonoBehaviour
 {
     [Header("Frame Sprites")]
@@ -29,11 +30,23 @@ public class OrigamiSwipeController : MonoBehaviour
 
     [HideInInspector] public System.Action onComplete;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip _winSound;
+    private AudioSource _audioSource;
+
     private bool    _isDragging    = false;
     private Vector2 _dragStart     = Vector2.zero;
     private float   _totalProgress = 0f;   // accumulates across multiple strokes
     private int     _currentFrame  = 0;
     private bool    _completed     = false;
+
+    void Awake()
+    {
+        _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null)
+            _audioSource = gameObject.AddComponent<AudioSource>();
+        _audioSource.playOnAwake = false;
+    }
 
     void Start()
     {
@@ -162,6 +175,16 @@ public class OrigamiSwipeController : MonoBehaviour
     {
         if (_completed) return;
         _completed = true;
+        StartCoroutine(PlayWinSoundThenComplete());
+    }
+
+    System.Collections.IEnumerator PlayWinSoundThenComplete()
+    {
+        if (_winSound != null && _audioSource != null)
+        {
+            _audioSource.PlayOneShot(_winSound);
+            yield return new WaitForSeconds(_winSound.length);
+        }
         onComplete?.Invoke();
     }
 }

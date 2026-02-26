@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LevelProgressionController : MonoBehaviour
 {
@@ -34,12 +36,17 @@ public class LevelProgressionController : MonoBehaviour
     public BoatRepairReward boatRepairReward;
     public BoatMovement boatMovement;
 
+    [Header("End Game")]
+    public GameObject endGamePanel;
+    public float endGameDisplayDuration = 2f;
+
     private bool _waitingForL3UnlockPoint  = false;
     private bool _waitingForBoatBreakpoint = false;
 
     private void Awake()
     {
         brokenBoat?.SetActive(false);
+        endGamePanel?.SetActive(false);
         collectiblesLevel2?.SetActive(false);
         collectiblesLevel3?.SetActive(false);
         moveablesLevel2?.SetActive(false);
@@ -73,7 +80,6 @@ public class LevelProgressionController : MonoBehaviour
         {
             collectiblesLevel1?.SetActive(false);
             collectiblesLevel2?.SetActive(true);
-            moveablesLevel1?.SetActive(false);
             moveablesLevel2?.SetActive(true);
             RegisterGroupWithManager(collectiblesLevel2, 2);
 
@@ -95,7 +101,6 @@ public class LevelProgressionController : MonoBehaviour
         {
             SwapBackground(2);
             collectiblesLevel2?.SetActive(false);
-            moveablesLevel2?.SetActive(false);
             collectiblesLevel3?.SetActive(true);
             moveablesLevel3?.SetActive(true);
             RegisterGroupWithManager(collectiblesLevel3, 3);
@@ -109,8 +114,6 @@ public class LevelProgressionController : MonoBehaviour
         {
             collectiblesLevel3A?.SetActive(false);
             collectiblesLevel3B?.SetActive(false);
-            moveablesLevel3A?.SetActive(false);
-            moveablesLevel3B?.SetActive(false);
 
             if (boatRepairReward != null)
                 boatRepairReward.Play(onComplete: () =>
@@ -143,6 +146,8 @@ public class LevelProgressionController : MonoBehaviour
         if (_waitingForBoatBreakpoint)
         {
             _waitingForBoatBreakpoint = false;
+            if (boatMovement != null)
+                boatMovement.onSailingComplete = () => StartCoroutine(EndGameSequence());
             boatMovement?.StartSailing();
         }
     }
@@ -197,5 +202,16 @@ public class LevelProgressionController : MonoBehaviour
         CameraAutoFit fit = backgroundRenderer.GetComponentInParent<CameraAutoFit>();
         if (fit == null) fit = FindObjectOfType<CameraAutoFit>();
         fit?.Refit();
+    }
+
+    private IEnumerator EndGameSequence()
+    {
+        endGamePanel?.SetActive(true);
+        yield return new WaitForSeconds(endGameDisplayDuration);
+        GameEvents.GameCompleted = true;
+        GameEvents.CurrentLevel = 1;
+        PlayerPrefs.SetInt("GameCompleted", 1);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene("SplashScreen");
     }
 }

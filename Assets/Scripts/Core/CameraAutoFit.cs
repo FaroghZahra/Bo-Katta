@@ -26,5 +26,7 @@ public class CameraAutoFit : MonoBehaviour
             float difference = targetRatio / screenRatio;
             cam.orthographicSize = background.bounds.size.y / 2f * difference;
         }
+
+        GetComponent<PinchZoomController>()?.OnCameraAutoFitRefit();
     }
 }

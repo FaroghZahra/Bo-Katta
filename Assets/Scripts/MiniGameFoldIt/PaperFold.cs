@@ -64,6 +64,7 @@ public class PaperFold : MonoBehaviour
         else
         {
             gameController.currentOrderIndex++;
+            gameController.PlayFoldSound();
             if(gameController.maxRotations == gameController.currentOrderIndex)
             {
                 gameController.CheckIfRotatedCorrectly();

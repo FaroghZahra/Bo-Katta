@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(AudioSource))]
 public class GameController : MonoBehaviour
 {
     public int currentOrderIndex = 0;
@@ -14,6 +15,10 @@ public class GameController : MonoBehaviour
     public string nextSceneName;
     public bool isEmbedded = false;  // Set to true by MinigameMenuController after additive load
     [HideInInspector] public System.Action onComplete;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip _foldSound;
+    private AudioSource _audioSource;
 
     [Header("Swipe Settings")]
     [Tooltip("Minimum pixels a finger must travel to count as a swipe")]
@@ -27,7 +32,18 @@ public class GameController : MonoBehaviour
 
     void Start()
     {
+        _audioSource = GetComponent<AudioSource>();
         _allFolds = FindObjectsOfType<PaperFold>();
+        StartCoroutine(AutoTriggerFirstFold());
+    }
+
+    IEnumerator AutoTriggerFirstFold()
+    {
+        yield return null;   // one frame — let everything settle
+        PaperFold first = System.Array.Find(_allFolds,
+            f => f.rotationOrderIndices != null && f.rotationOrderIndices.Contains(0));
+        if (first != null)
+            first.RotatePaper(false);
     }
 
     void Update()
@@ -130,7 +146,7 @@ public class GameController : MonoBehaviour
             }
 
             // Swipe opposes piece's fold direction → candidate to unfold
-            if (pf.rotated && dot < -bestUnfoldScore)
+            if (pf.rotated && dot < -bestUnfoldScore && pf.orderIndex != 0)
             {
                 bestUnfoldScore = -dot;
                 unfoldTarget = pf;
@@ -152,12 +168,19 @@ public class GameController : MonoBehaviour
 
     IEnumerator RotateBackToIndex(int index)
     {
+        index = Mathf.Max(index, 1);   // never undo the auto-first fold
         while (currentOrderIndex != index)
         {
             int prevIndex = currentOrderIndex;
             paperFolds[currentOrderIndex - 1].RotatePaper(true);
             yield return new WaitUntil(() => currentOrderIndex < prevIndex);
         }
+    }
+
+    public void PlayFoldSound()
+    {
+        if (_foldSound != null && _audioSource != null)
+            _audioSource.PlayOneShot(_foldSound);
     }
 
     public void CheckIfRotatedCorrectly()

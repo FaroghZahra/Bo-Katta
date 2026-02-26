@@ -13,11 +13,15 @@ public class BoatMovement : MonoBehaviour
     public float moveDuration = 3f;
     public Ease  moveEase     = Ease.InOutSine;
 
+    public System.Action onSailingComplete;
+
     public void StartSailing()
     {
         if (moveTarget == null) return;
         if (character != null)
             character.SetParent(transform, worldPositionStays: true);
-        transform.DOMove(moveTarget.position, moveDuration).SetEase(moveEase);
+        transform.DOMove(moveTarget.position, moveDuration)
+            .SetEase(moveEase)
+            .OnComplete(() => onSailingComplete?.Invoke());
     }
 }

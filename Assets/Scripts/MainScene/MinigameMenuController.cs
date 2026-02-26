@@ -22,6 +22,7 @@ public class MinigameMenuController : MonoBehaviour
     private bool minigameIsLoaded = false;
     private Camera _mainCamera;
     private int _originalMainCullingMask = -1;
+    private PinchZoomController _cameraZoom;
 
     private void Awake()
     {
@@ -33,6 +34,8 @@ public class MinigameMenuController : MonoBehaviour
         {
             if (c.gameObject.scene == gameObject.scene) { _mainCamera = c; break; }
         }
+        if (_mainCamera != null)
+            _cameraZoom = _mainCamera.GetComponent<PinchZoomController>();
     }
 
     private void OnEnable()  => GameEvents.OnMinigameWon += HandleMinigameWon;
@@ -43,6 +46,7 @@ public class MinigameMenuController : MonoBehaviour
         if (minigameIsLoaded) return;
         Debug.Log($"[MinigameMenuController] Opening level {level}");
         GameEvents.CurrentLevel = level;
+        _cameraZoom?.SetZoomEnabled(false);
         dimOverlay?.SetActive(true);
 
         AsyncOperation loadOp = SceneManager.LoadSceneAsync(minigameSceneName, LoadSceneMode.Additive);
@@ -129,6 +133,7 @@ public class MinigameMenuController : MonoBehaviour
         minigameIsLoaded = false;
 
         dimOverlay?.SetActive(false);
+        _cameraZoom?.SetZoomEnabled(true);
 
         yield return StartCoroutine(ShowVictoryMessage());
 

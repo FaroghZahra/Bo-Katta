@@ -88,7 +88,7 @@ public class MiniGameSequenceController : MonoBehaviour
         // Show the Kintsugi phase label immediately.
         if (transitionText != null)
         {
-            transitionText.text = "bring the pieces together";
+            transitionText.text = "Drag each shard back where it belongs. Then seal the cracks with gold";
             transitionText.gameObject.SetActive(true);
         }
     }
@@ -132,7 +132,7 @@ public class MiniGameSequenceController : MonoBehaviour
 
         if (transitionText != null)
         {
-            transitionText.text = "fold to reveal";
+            transitionText.text = "The paper knows its shape. Fold each piece in order -- one wrong crease and it all unfolds";
             transitionText.gameObject.SetActive(true);
         }
     }
@@ -163,7 +163,7 @@ public class MiniGameSequenceController : MonoBehaviour
 
         if (transitionText != null)
         {
-            transitionText.text = "unfold the sun";
+            transitionText.text = "The sun is folded shut. Swipe to open it -- let the light pour out";
             transitionText.gameObject.SetActive(true);
         }
     }
