@@ -11,13 +11,23 @@ public class LevelProgressionController : MonoBehaviour
     public GameObject collectiblesLevel2;
     public GameObject collectiblesLevel3;
 
+    [Header("Moveable Groups")]
+    public GameObject moveablesLevel1;
+    public GameObject moveablesLevel2;
+    public GameObject moveablesLevel3;
+
     [Header("Character")]
     public CharacterMovement characterMovement;
+
+    [Header("Rewards")]
+    public BridgeRepairReward bridgeRepairReward;
 
     private void Awake()
     {
         collectiblesLevel2?.SetActive(false);
         collectiblesLevel3?.SetActive(false);
+        moveablesLevel2?.SetActive(false);
+        moveablesLevel3?.SetActive(false);
     }
 
     private void Start()
@@ -32,17 +42,31 @@ public class LevelProgressionController : MonoBehaviour
     {
         if (completedLevel == 1)
         {
-            SwapBackground(1);
             collectiblesLevel1?.SetActive(false);
             collectiblesLevel2?.SetActive(true);
+            moveablesLevel1?.SetActive(false);
+            moveablesLevel2?.SetActive(true);
             RegisterGroupWithManager(collectiblesLevel2, 2);
-            characterMovement?.ResumeMoving();
+
+            if (bridgeRepairReward != null)
+                bridgeRepairReward.Play(onComplete: () =>
+                {
+                    SwapBackground(1);
+                    characterMovement?.ResumeMoving();
+                });
+            else
+            {
+                SwapBackground(1);
+                characterMovement?.ResumeMoving();
+            }
         }
         else if (completedLevel == 2)
         {
             SwapBackground(2);
             collectiblesLevel2?.SetActive(false);
             collectiblesLevel3?.SetActive(true);
+            moveablesLevel2?.SetActive(false);
+            moveablesLevel3?.SetActive(true);
             RegisterGroupWithManager(collectiblesLevel3, 3);
             characterMovement?.ResumeMoving();
         }
@@ -50,6 +74,7 @@ public class LevelProgressionController : MonoBehaviour
         {
             SwapBackground(3);
             collectiblesLevel3?.SetActive(false);
+            moveablesLevel3?.SetActive(false);
             characterMovement?.ResumeMoving();
         }
     }

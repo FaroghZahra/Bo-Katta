@@ -11,8 +11,10 @@ public class CollectibleManager : MonoBehaviour
 
     [Header("HUD")]
     public TextMeshProUGUI hudCounterText;
+    public TextMeshProUGUI goldHudText;
 
     private int _collectedCount = 0;
+    private bool _goldItemCollected = false;
     private int _currentLevelIndex = 1;
     private List<GameObject> _allCollectibles = new List<GameObject>();
 
@@ -25,6 +27,7 @@ public class CollectibleManager : MonoBehaviour
     private void Start()
     {
         UpdateHUD();
+        UpdateGoldHUD();
     }
 
 
@@ -36,7 +39,7 @@ public class CollectibleManager : MonoBehaviour
         go.SetActive(false);
         UpdateHUD();
 
-        if (_collectedCount >= totalCollectibles)
+        if (_collectedCount >= totalCollectibles && _goldItemCollected)
             MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
     }
 
@@ -44,14 +47,7 @@ public class CollectibleManager : MonoBehaviour
     {
         _collectedCount = 0;
         UpdateHUD();
-
-        foreach (GameObject go in _allCollectibles)
-        {
-            if (go == null) continue;
-            go.SetActive(true);
-            CollectibleAnimator anim = go.GetComponent<CollectibleAnimator>();
-            anim?.Reactivate();
-        }
+        // collectibles are restored by their Moveables
     }
 
     public void SetupForLevel(GameObject[] collectibles, int levelIndex = 1)
@@ -63,9 +59,23 @@ public class CollectibleManager : MonoBehaviour
         UpdateHUD();
     }
 
+    public void CollectGoldItem()
+    {
+        _goldItemCollected = true;
+        UpdateGoldHUD();
+        if (_collectedCount >= totalCollectibles)
+            MinigameMenuController.Instance?.OpenMenu(_currentLevelIndex);
+    }
+
     private void UpdateHUD()
     {
         if (hudCounterText != null)
             hudCounterText.text = $"{_collectedCount}/{totalCollectibles}";
+    }
+
+    private void UpdateGoldHUD()
+    {
+        if (goldHudText != null)
+            goldHudText.text = _goldItemCollected ? "1/1" : "0/1";
     }
 }
