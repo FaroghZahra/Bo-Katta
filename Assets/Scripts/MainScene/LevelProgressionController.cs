@@ -206,8 +206,13 @@ public class LevelProgressionController : MonoBehaviour
 
     private IEnumerator EndGameSequence()
     {
-        endGamePanel?.SetActive(true);
-        yield return new WaitForSeconds(endGameDisplayDuration);
+        if (StoryTeller.Instance != null)
+            yield return StoryTeller.Instance.PlayOutro();
+        else
+        {
+            endGamePanel?.SetActive(true);
+            yield return new WaitForSeconds(endGameDisplayDuration);
+        }
         GameEvents.GameCompleted = true;
         GameEvents.CurrentLevel = 1;
         PlayerPrefs.SetInt("GameCompleted", 1);

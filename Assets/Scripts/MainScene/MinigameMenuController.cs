@@ -147,6 +147,11 @@ public class MinigameMenuController : MonoBehaviour
 
     private IEnumerator ShowVictoryMessage()
     {
+        if (StoryTeller.Instance != null)
+        {
+            yield return StoryTeller.Instance.ShowVictory(GameEvents.CurrentLevel);
+            yield break;
+        }
         if (victoryText != null)
         {
             victoryText.gameObject.SetActive(true);

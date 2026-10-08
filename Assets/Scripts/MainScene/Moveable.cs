@@ -1,7 +1,7 @@
 using DG.Tweening;
 using UnityEngine;
 
-public enum MoveableType { Rock, Barrel, Tree, Door }
+public enum MoveableType { Rock, Barrel, Tree, Door, Blind }
 
 public class Moveable : MonoBehaviour
 {
@@ -19,16 +19,22 @@ public class Moveable : MonoBehaviour
     [Header("Door — Child Activation")]
     public GameObject doorOpenChild;
 
+    [Header("Blind — Roll Up")]
+    [Tooltip("Fraction of the blind's height left showing when fully rolled up.")]
+    [Range(0.05f, 1f)] public float rolledUpScale = 0.15f;
+
     private bool _canInteract = false;
     private bool _activated   = false;
     private int  _collectiblesCollected = 0;
     private Vector3 _originalPosition;
+    private Vector3 _originalScale;
     private Camera _sceneCamera;
     private Collider2D _col;
 
     private void Awake()
     {
         _originalPosition = transform.position;
+        _originalScale    = transform.localScale;
         _col = GetComponent<Collider2D>();
         foreach (Camera c in FindObjectsOfType<Camera>())
             if (c.gameObject.scene == gameObject.scene) { _sceneCamera = c; break; }
@@ -97,7 +103,22 @@ public class Moveable : MonoBehaviour
                 doorOpenChild?.SetActive(true);
                 ActivateCollectible();
                 break;
+            case MoveableType.Blind:
+                RollBlind(rolledUpScale, Ease.OutQuad).OnComplete(ActivateCollectible);
+                break;
         }
+    }
+
+    // Squashes the blind vertically while keeping its top edge fixed, so it rolls up like a curtain.
+    private Tween RollBlind(float scaleFactor, Ease ease)
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        float fullHeight = sr != null ? sr.bounds.size.y / (transform.localScale.y / _originalScale.y) : 0f;
+        float targetY = _originalPosition.y + fullHeight * (1f - scaleFactor) * 0.5f;
+        return DOTween.Sequence()
+            .Join(transform.DOScaleY(_originalScale.y * scaleFactor, moveDuration).SetEase(ease))
+            .Join(transform.DOMoveY(targetY, moveDuration).SetEase(ease))
+            .SetTarget(transform);
     }
 
     private void ActivateCollectible()
@@ -120,6 +141,9 @@ public class Moveable : MonoBehaviour
                 break;
             case MoveableType.Tree:
                 transform.DOMove(_originalPosition, moveDuration).SetEase(Ease.InBack);
+                break;
+            case MoveableType.Blind:
+                RollBlind(1f, Ease.InQuad);
                 break;
             // Door: keep open sprite (no revert)
             // Barrel: nothing

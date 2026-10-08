@@ -40,6 +40,7 @@ public class PinchZoomController : MonoBehaviour
     /// Called by CameraAutoFit after Refit() so max-size and position stay in sync.
     public void OnCameraAutoFitRefit()
     {
+        if (_camera == null) _camera = GetComponent<Camera>();  // CameraAutoFit is [ExecuteAlways] and can call this before Awake
         maxOrthographicSize = _camera.orthographicSize;
         ResetCameraPosition();
     }

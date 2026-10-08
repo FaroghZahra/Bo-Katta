@@ -42,6 +42,7 @@ public class CollectibleManager : MonoBehaviour
         _collectedCount++;
         go.SetActive(false);
         UpdateHUD();
+        GameEvents.ItemCollected(false, _collectedCount, totalCollectibles, _goldItemCollected);
 
         if (_collectedCount >= totalCollectibles && _goldItemCollected)
         {
@@ -79,6 +80,7 @@ public class CollectibleManager : MonoBehaviour
     {
         _goldItemCollected = true;
         UpdateGoldHUD();
+        GameEvents.ItemCollected(true, _collectedCount, totalCollectibles, true);
         if (_collectedCount >= totalCollectibles)
         {
             if (onAllCollectedOverride != null)

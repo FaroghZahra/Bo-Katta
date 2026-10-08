@@ -5,6 +5,9 @@ public class CollectibleAnimator : MonoBehaviour
     [Header("Moveable Link")]
     public Moveable linkedMoveable;
 
+    [Tooltip("Keep the sprite invisible until Activate() is called (e.g. paper behind a closed door).")]
+    public bool hideUntilActivated = false;
+
     private bool _interactable = false;
     private Camera _sceneCamera;
     private Collider2D _col;
@@ -19,11 +22,16 @@ public class CollectibleAnimator : MonoBehaviour
         {
             if (c.gameObject.scene == gameObject.scene) { _sceneCamera = c; break; }
         }
+
+        if (hideUntilActivated && TryGetComponent(out SpriteRenderer sr))
+            sr.enabled = false;
     }
 
     public void Activate()
     {
         _interactable = true;
+        if (hideUntilActivated && TryGetComponent(out SpriteRenderer sr))
+            sr.enabled = true;
     }
 
     private void Update()

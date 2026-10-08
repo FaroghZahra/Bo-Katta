@@ -175,10 +175,11 @@ MonoBehaviour:
   puzzleCenter: {fileID: 1589972856}
   goldSeamsParent: {fileID: 1138326274}
   levelTextures:
-  - {fileID: 2800000, guid: 568a5425b232ff348935339f2a59a9c4, type: 3}
+  - {fileID: 2800000, guid: bd59a094c1044d142a71d073c0a2669a, type: 3}
   - {fileID: 2800000, guid: 03fc68edbfef49f49ae3d1bca10c00ca, type: 3}
   - {fileID: 2800000, guid: b49f4f68bb6202c43bf536d7bfa18ba7, type: 3}
   goldSeamMaterial: {fileID: 2100000, guid: 18f1c689e6bd1e24f8f201b8a0af1109, type: 2}
+  seamGuideColor: {r: 0.6, g: 1, b: 0.95, a: 0.3}
   snapCurve:
     serializedVersion: 2
     m_Curve:
@@ -633,7 +634,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Fold the paper to fill the gap
+  m_text: Fold the kite paper to fill the gap
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

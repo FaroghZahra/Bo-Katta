@@ -9,6 +9,8 @@ public class BoatRepairReward : MonoBehaviour
     public Sprite finalSprite;          // swapped in after the snap lands
     public Transform snapTarget;
     public Transform reparentTo;        // boat GO — sprite becomes its child so it sails away with it
+    [Tooltip("Optional: when set, the boat's own sprite is swapped to this mended version on landing and the flying pieces are hidden.")]
+    public Sprite fixedBoatSprite;
 
     [Header("Timing")]
     public float scaleDuration     = 0.5f;
@@ -67,6 +69,12 @@ public class BoatRepairReward : MonoBehaviour
                     {
                         rewardRenderer.sortingLayerName = boatRenderer.sortingLayerName;
                         rewardRenderer.sortingOrder     = boatRenderer.sortingOrder + 1;
+
+                        if (fixedBoatSprite != null)
+                        {
+                            boatRenderer.sprite = fixedBoatSprite;
+                            rewardRenderer.gameObject.SetActive(false);
+                        }
                     }
                 }
                 DOVirtual.DelayedCall(1f, () => onComplete?.Invoke());

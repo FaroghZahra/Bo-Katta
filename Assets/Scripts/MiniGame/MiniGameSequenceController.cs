@@ -88,7 +88,7 @@ public class MiniGameSequenceController : MonoBehaviour
         // Show the Kintsugi phase label immediately.
         if (transitionText != null)
         {
-            transitionText.text = "Drag each shard back where it belongs. Then seal the cracks with gold";
+            transitionText.text = "Gather the broken kashi tile. Drag each shard home, then seal the cracks with turquoise glaze";
             transitionText.gameObject.SetActive(true);
         }
     }
@@ -132,7 +132,7 @@ public class MiniGameSequenceController : MonoBehaviour
 
         if (transitionText != null)
         {
-            transitionText.text = "The paper knows its shape. Fold each piece in order -- one wrong crease and it all unfolds";
+            transitionText.text = "Fold the tissue over the bamboo, edge by edge -- one wrong crease and it all comes loose";
             transitionText.gameObject.SetActive(true);
         }
     }
@@ -163,7 +163,7 @@ public class MiniGameSequenceController : MonoBehaviour
 
         if (transitionText != null)
         {
-            transitionText.text = "The sun is folded shut. Swipe to open it -- let the light pour out";
+            transitionText.text = "Dada's kite is folded shut. Swipe to open it -- let it catch the Basant wind";
             transitionText.gameObject.SetActive(true);
         }
     }

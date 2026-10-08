@@ -20,6 +20,8 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
 
     [Header("Seam & Snap")]
     public Material        goldSeamMaterial;
+    [Tooltip("Colour of the faint seam hint shown before the player traces it.")]
+    public Color           seamGuideColor = new Color(0.6f, 1f, 0.95f, 0.3f);
     public AnimationCurve  snapCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Background")]
@@ -358,8 +360,8 @@ public class KintsugiPuzzleGenerator : MonoBehaviour
                 guideLr.startWidth    = _data.goldSeamWidth;
                 guideLr.endWidth      = _data.goldSeamWidth;
                 guideLr.material      = new Material(Shader.Find("Sprites/Default"));
-                guideLr.startColor    = new Color(1f, 0.9f, 0.6f, 0.3f);
-                guideLr.endColor      = new Color(1f, 0.9f, 0.6f, 0.3f);
+                guideLr.startColor    = seamGuideColor;
+                guideLr.endColor      = seamGuideColor;
                 guideLr.sortingOrder  = 9;
                 guideLr.enabled       = false;
 
