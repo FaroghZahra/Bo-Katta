@@ -52,6 +52,10 @@ public class GameController : MonoBehaviour
 
 #if UNITY_EDITOR || UNITY_STANDALONE
         HandleMouseSwipe();
+#elif UNITY_WEBGL
+        // Browser: desktop uses the mouse, phones use touch (touch also fakes mouse events, so pick one).
+        if (Input.touchCount > 0) HandleTouchSwipe();
+        else HandleMouseSwipe();
 #else
         HandleTouchSwipe();
 #endif

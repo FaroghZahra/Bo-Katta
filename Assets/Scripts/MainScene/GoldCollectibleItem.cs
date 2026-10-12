@@ -31,13 +31,14 @@ public class GoldCollectibleItem : MonoBehaviour
     public void Activate()
     {
         _interactable = true;
+        CollectibleGlow.Show(gameObject);
     }
 
     private void OnBreakpointReached()
     {
         // Only auto-activate on breakpoint if there is no moveable controlling this item
         if (linkedMoveable == null)
-            _interactable = true;
+            Activate();
     }
 
     private void Update()

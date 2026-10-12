@@ -230,15 +230,23 @@ Assets/
 ├── Scripts/           # See Script Organization above
 ├── Scenes/            # MainScene.unity, MiniGameScene.unity, FoldItScene.unity, Kitsungi.unity
 ├── Meshes/            # 9 FBX meshes: base, top, bottom, left, right, + 4 corners
-├── Materials/         # Paper.mat, Base.mat, Plane.mat, CustomDashLine.mat
-│                      #   + DashLineShader.shader
+├── Materials/         # Paper.mat, Base.mat, Plane.mat, CustomDashLine.mat, GlazeSeam.mat (turquoise seams),
+│                      #   FoldPlanks.mat (L1 fold art) + DashLineShader.shader
 ├── Prefabs/           # Collectible.prefab
-├── Sprites/
-│   ├── Boat/          # boat-broken.png, boat-pieces-1/2.png, kintsugi variants, coord sheets
-│   ├── Suns/          # Sun sprite variants
-│   └── (other 2D character and background art)
-├── Sounds/            # Bg.mp3 (background music)
+├── Sprites/           # Lahore "Guddi — A Basant Tale" art
+│   ├── Backgrounds/Lahore/  # lahore-diorama-L1..L4 (one diorama, progressive colour reveal) + kite-tree foreground
+│   ├── Characters/Noor/     # noor-idle-front/back, noor-walk-front/back-0..3 (walk cycle)
+│   ├── Characters/Pigeon/   # pigeon-tangled/-walk-front/-walk-back/-healed, pigeon-flock-front/back (L3)
+│   ├── Objects/Level1..3/   # matka, handi-stack, chik-blind, golden-charkhi, bridge-mended, cage-lid, brick-pile, ...
+│   ├── Objects/Finale/      # kishti-broken / kishti-mended, kishti-repair-planks(-glazed)
+│   ├── Collectibles/        # scrap-<level>-<hiding place>.png (kite-paper scraps), scrap-default
+│   ├── Minigames/           # fold-planks-L1, shards-L2-folded-kite, shards-L3-kishti, KiteUnfold/kite-unfold-1..6
+│   ├── UI/                  # title-boo-katta (splash), ui-forward-arrow
+│   └── _Legacy/             # unused art from the original Paper Weaver's Tale (kept, not referenced)
+├── Textures/          # kite-tissue-paper.jpg, kashi-tile-antique.png (L1 shard puzzle), DashLineSprite.png
+├── Sounds/            # RhythmsOfIndia.mp3 (background music), foldit/open/snapsound.mp3; _Legacy/Bg-old-theme.mp3
 ├── Resources/
+│   ├── CollectibleGlow.png  # halo loaded by CollectibleGlow.cs
 │   ├── Kintsugi/      # Level1.json, Level2.json, Level3.json
 │   └── FoldIt/        # Level1.json, Level2.json, Level3.json
 ├── TIleMaps/ & Tiles/ # Tilemap palette for MainScene

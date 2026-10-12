@@ -1723,7 +1723,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 7.386592
+  orthographic size: 8.704783
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1780,9 +1780,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minOrthographicSize: 2
-  maxOrthographicSize: 7.386592
+  maxOrthographicSize: 8.704783
   pinchZoomSpeed: 0.05
   scrollZoomSpeed: 0.5
+  enableDragPan: 1
+  dragThresholdPixels: 12
   background: {fileID: 438826841}
 --- !u!1 &527519558
 GameObject:
@@ -2221,11 +2223,15 @@ PrefabInstance:
       objectReference: {fileID: 2081026190}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 1.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2927,7 +2933,7 @@ MonoBehaviour:
   reachDistance: 0.3
   rotatePauseDuration: 0
   sittingPauseDuration: 0.8
-  afterKintsugiObject: {fileID: 2010246110}
+  afterKintsugiObject: {fileID: 0}
 --- !u!114 &905907884 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -4277223401696911478, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
@@ -4231,8 +4237,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a56c3d416169ac419bedcdd44a91c9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bgClip: {fileID: 8300000, guid: 5ea68a6b1a5a7a44d85e25b202fae0aa, type: 3}
-  loopDuration: 15
+  bgClip: {fileID: 8300000, guid: 3a9d896dc904094499b8dd9c648a346e, type: 3}
+  loopDuration: 0
+  volume: 0.55
+  fadeInSeconds: 2.5
 --- !u!82 &1253146500
 AudioSource:
   m_ObjectHideFlags: 0
@@ -4243,7 +4251,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 5ea68a6b1a5a7a44d85e25b202fae0aa, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 3a9d896dc904094499b8dd9c648a346e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -4772,11 +4780,11 @@ PrefabInstance:
       objectReference: {fileID: 1107738046}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.z
@@ -5264,11 +5272,15 @@ PrefabInstance:
       objectReference: {fileID: 1371601072}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 1.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 767813728164337383, guid: 3588a830e3bdeb045b9be9fd0f3cff5f, type: 3}
       propertyPath: m_LocalPosition.x

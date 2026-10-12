@@ -97,6 +97,10 @@ public class KintsugiGameController : MonoBehaviour
 
 #if UNITY_EDITOR || UNITY_STANDALONE
         HandleMouseInput();
+#elif UNITY_WEBGL
+        // Browser: desktop uses the mouse, phones use touch (touch also fakes mouse events, so pick one).
+        if (Input.touchCount > 0) HandleTouchInput();
+        else HandleMouseInput();
 #else
         HandleTouchInput();
 #endif

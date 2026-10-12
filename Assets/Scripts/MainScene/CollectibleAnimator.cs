@@ -32,6 +32,7 @@ public class CollectibleAnimator : MonoBehaviour
         _interactable = true;
         if (hideUntilActivated && TryGetComponent(out SpriteRenderer sr))
             sr.enabled = true;
+        CollectibleGlow.Show(gameObject);
     }
 
     private void Update()
