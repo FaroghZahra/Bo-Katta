@@ -751,14 +751,14 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: The Paper Weaver's Tale
+  metroPackageName: Boo Katta
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: The Paper Weaver's Tale
+  metroApplicationDescription: Boo Katta
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -830,7 +830,7 @@ PlayerSettings:
   cloudProjectId: 1da9f6f3-6773-46c0-935f-8669695fe919
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: The Paper Weaver's Tale
+  projectName: Boo Katta
   organizationId: faroghz
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

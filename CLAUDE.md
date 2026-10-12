@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**The Paper Weaver's Tale** is a 2D narrative puzzle adventure game built in Unity 2022.3.62f2 (LTS). The game features a main hub scene and a combined minigame scene that runs two puzzles in sequence: **Kintsugi** (gold seam tracing) → **Fold It** (paper folding).
+**Boo Katta** is a 2D narrative puzzle adventure game built in Unity 2022.3.62f2 (LTS). The game features a main hub scene and a combined minigame scene that runs two puzzles in sequence: **Kintsugi** (gold seam tracing) → **Fold It** (paper folding).
 
 ## Unity Workflow
 
@@ -242,7 +242,7 @@ Assets/
 │   ├── Collectibles/        # scrap-<level>-<hiding place>.png (kite-paper scraps), scrap-default
 │   ├── Minigames/           # fold-planks-L1, shards-L2-folded-kite, shards-L3-kishti, KiteUnfold/kite-unfold-1..6
 │   ├── UI/                  # title-boo-katta (splash), ui-forward-arrow
-│   └── _Legacy/             # unused art from the original Paper Weaver's Tale (kept, not referenced)
+│   └── _Legacy/             # unused art from an earlier version of the game (kept, not referenced)
 ├── Textures/          # kite-tissue-paper.jpg, kashi-tile-antique.png (L1 shard puzzle), DashLineSprite.png
 ├── Sounds/            # RhythmsOfIndia.mp3 (background music), foldit/open/snapsound.mp3; _Legacy/Bg-old-theme.mp3
 ├── Resources/

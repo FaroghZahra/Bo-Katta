@@ -1,4 +1,4 @@
-# Script Reference — The Paper Weaver's Tale
+# Script Reference — Boo Katta
 
 Complete description of every C# script under `Assets/Scripts/`. Written for Claude so it never has to re-read a file just to understand its purpose.
 
